@@ -55,7 +55,7 @@ class Parser:
         cleaned = "\n".join(self._remove_comments())
         try:
             config = loads(cleaned)
-            if not isinstance(ret, dict):
+            if not isinstance(config, dict):
                 print("Error: Not a valid dictionary")
                 exit(1)
         except JSONDecodeError as e:
@@ -67,8 +67,6 @@ class Parser:
     def is_positive(label: str, value: Any) -> bool:
         if not isinstance(value, int):
             print(f"Error: {label} must be an integer.", file=stderr)
-            return False
-        if value < 0:
             print(f"Error: {label} must be strictly positive.", file=stderr)
             return False
         return True
@@ -86,32 +84,34 @@ class Parser:
         cfg: dict[str, Any] = self.parse_json()
 
         missing_params = [
-            param for param in cfg if param not in DEFAULT_CFG_PARAMS
+            param for param in DEFAULT_CFG_PARAMS if param not in cfg
         ]
+        for param in missing_params:
+            cfg[param] = DEFAULT_CFG_PARAMS[param]
+            print(
+                f"Mandatory parameter does not exist in config file. Default value applied ( {param}: {DEFAULT_CFG_PARAMS[param]} )"
+            )
 
-        print(missing_params)
-
-
-#        for param, value in cfg.items():
-##            if param not in DEFAULT_CFG_PARAMS:
-##                print(
-##                    "Parameter does not belong to default parameters. Skipping it."
-##                )
-##                continue
-##            if param not in [
-##                "highscore_filename",
-##                "level",
-##            ] and not is_positive(param, cfg[param]):
-##                cfg[param] = DEFAULT_CFG_PARAMS[param]
-##                continue
-##            if param == "highscore_filename":
-##                self.validate_highscore_file(param[cfg])
-##            if param == "level":
-##                if not isinstance(level, list):
-#                    print("Error: Level must be a list", file=stderr)
+        for param, value in cfg.items():
+            if param not in DEFAULT_CFG_PARAMS:
+                print(
+                    "Parameter does not belong to default parameters. Skipping it."
+                )
+                continue
+            if param not in [
+                "highscore_filename",
+                "level",
+            ] and not self.is_positive(param, cfg[param]):
+                cfg[param] = DEFAULT_CFG_PARAMS[param]
+                continue
+            if param == "highscore_filename":
+                self.validate_highscore_file(cfg[param])
+            if param == "level":
+                if not isinstance(cfg[param], list):
+                    print("Error: Level must be a list", file=stderr)
 
 
 if __name__ == "__main__":
     path: Path = Path(__file__).parent.parent / "config" / "config.json"
     parser = Parser(path)
-    print(parser.parse_json())
+    print(parser.parse_config())
