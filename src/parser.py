@@ -1,12 +1,14 @@
+from collections.abc import Callable
+from copy import deepcopy
 from json import JSONDecodeError, loads
 from pathlib import Path
-from sys import exit, stderr
-from typing import Any
+from sys import stderr
+from typing import Any, NoReturn
 
-DEFAULT_CFG_PARAMS = {
+DEFAULT_CFG_PARAMS: dict[str, Any] = {
     "highscore_filename": "highscore.json",
     "level": [],
-    "width": 10,
+    "width": 12,
     "height": 10,
     "lives": 3,
     "pacgum": 42,
@@ -18,100 +20,86 @@ DEFAULT_CFG_PARAMS = {
 }
 
 
+def is_positive(value: Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value > 0
+
+
+def is_highscore_filename(value: Any) -> bool:
+    return isinstance(value, str) and value.endswith(".json")
+
+
+Rule = tuple[Callable[[Any], bool], str]
+
+DEFAULT_RULE: Rule = (is_positive, "a strictly positive integer")
+RULES: dict[str, Rule] = {
+    "highscore_filename": (is_highscore_filename, "a .json filename"),
+    "level": (lambda v: isinstance(v, list), "a list"),
+}
+
+
+def fail(message: str) -> NoReturn:
+    print(f"Error: {message}", file=stderr)
+    raise SystemExit(1)
+
+
+def warn(message: str) -> None:
+    print(f"Warning: {message}", file=stderr)
+
+
 class Parser:
-    def __init__(self, path: Path):
+    def __init__(self, path: Path) -> None:
         self.path = path
 
     def _load_file(self) -> str:
         try:
             raw = self.path.read_text(encoding="utf-8")
-        except FileNotFoundError:
-            print(f"Error: File not found in path {self.path}", file=stderr)
-            exit(1)
-        except PermissionError:
-            print(
-                f"Error: Permission Denied to open file in path {self.path},",
-                file=stderr,
-            )
-            exit(1)
-        except (UnicodeDecodeError, IsADirectoryError) as e:
-            print(f"Error: {e}", file=stderr)
-            exit(1)
-        if not raw:
-            print(f"Error: File in path {self.path} is empty.", file=stderr)
-            exit(1)
+        except OSError as e:
+            fail(f"cannot read {self.path}: {e.strerror}")
+        except UnicodeDecodeError:
+            fail(f"{self.path} is not valid UTF-8.")
+        if not raw.strip():
+            fail(f"{self.path} is empty.")
         return raw
 
-    def _remove_comments(self) -> list[str]:
-        file = self._load_file().split("\n")
-        without_comments: list[str] = []
-        for line in file:
-            if line.lstrip().startswith("#"):
-                continue
-            without_comments.append(line)
-        return without_comments
+    def _remove_comments(self, text: str) -> str:
+        return "\n".join(
+            line
+            for line in text.splitlines()
+            if not line.lstrip().startswith("#")
+        )
 
     def parse_json(self) -> dict[str, Any]:
-        cleaned = "\n".join(self._remove_comments())
         try:
-            config = loads(cleaned)
-            if not isinstance(config, dict):
-                print("Error: Not a valid dictionary")
-                exit(1)
+            config = loads(self._remove_comments(self._load_file()))
         except JSONDecodeError as e:
-            print(f"Error failed to parse JSON: {e}", file=stderr)
-            exit(1)
+            fail(f"{self.path} is not valid JSON: {e}")
+        if not isinstance(config, dict):
+            fail(f"{self.path} must contain a JSON object.")
         return config
 
-    @staticmethod
-    def is_positive(label: str, value: Any) -> bool:
-        if not isinstance(value, int):
-            print(f"Error: {label} must be an integer.", file=stderr)
-            print(f"Error: {label} must be strictly positive.", file=stderr)
-            return False
-        return True
-
-    def validate_highscore_file(self, param: str) -> bool:
-        if not isinstance(param, str):
-            print(f"Error: {param} must be a string", file=stderr)
-            return False
-        if not param.endswith(".json"):
-            print(f"Error: {param} must end with .json", file=stderr)
-            return False
-        return True
-
-    def parse_config(self):
-        cfg: dict[str, Any] = self.parse_json()
-
-        missing_params = [
-            param for param in DEFAULT_CFG_PARAMS if param not in cfg
-        ]
-        for param in missing_params:
-            cfg[param] = DEFAULT_CFG_PARAMS[param]
-            print(
-                f"Mandatory parameter does not exist in config file. Default value applied ( {param}: {DEFAULT_CFG_PARAMS[param]} )"
+    def _resolve(self, raw: dict[str, Any], param: str, default: Any) -> Any:
+        check, expected = RULES.get(param, DEFAULT_RULE)
+        if param not in raw:
+            warn(f"{param} is missing, using default {default}.")
+        elif not check(raw[param]):
+            warn(
+                f"{param} must be {expected}, got {raw[param]}, "
+                f"using default {default}."
             )
+        else:
+            return raw[param]
+        return deepcopy(default)
 
-        for param, value in cfg.items():
-            if param not in DEFAULT_CFG_PARAMS:
-                print(
-                    "Parameter does not belong to default parameters. Skipping it."
-                )
-                continue
-            if param not in [
-                "highscore_filename",
-                "level",
-            ] and not self.is_positive(param, cfg[param]):
-                cfg[param] = DEFAULT_CFG_PARAMS[param]
-                continue
-            if param == "highscore_filename":
-                self.validate_highscore_file(cfg[param])
-            if param == "level":
-                if not isinstance(cfg[param], list):
-                    print("Error: Level must be a list", file=stderr)
+    def parse_config(self) -> dict[str, Any]:
+        raw = self.parse_json()
+        for param in raw.keys() - DEFAULT_CFG_PARAMS.keys():
+            warn(f"{param} is not a known parameter, ignoring it.")
+        return {
+            param: self._resolve(raw, param, default)
+            for param, default in DEFAULT_CFG_PARAMS.items()
+        }
 
 
 if __name__ == "__main__":
     path: Path = Path(__file__).parent.parent / "config" / "config.json"
-    parser = Parser(path)
-    print(parser.parse_config())
+    print(Parser(path).parse_config())
