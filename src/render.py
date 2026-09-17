@@ -15,6 +15,7 @@ GUM_COLOR = (255, 220, 100)
 PACMAN_COLOR = (255, 220, 0)
 COLOR_42 = (128, 128, 128)
 
+WALLS = {(0, -1): N, (1, 0): E, (0, 1): S, (-1, 0): W}
 FPS = 30
 
 
@@ -22,7 +23,7 @@ class Render:
     def __init__(self, maze: Maze, config: Config) -> None:
         self.maze = maze.get_maze
         self.width, self.height = maze.get_shape
-        self.center_x, self.center_y = maze.find_center_position()
+        self.x, self.y = maze.find_center_position()
         self.pacman = Pacman(maze, config)
         self.seed = config.seed
 
@@ -91,9 +92,13 @@ class Render:
                         WALL_WIDTH,
                     )
 
+    def able_to_move(self, dx: int, dy: int) -> bool:
+        wall = WALLS[(dx, dy)]
+        return not (self.maze[self.y][self.x] & wall)
+
     def draw_pacman(self, screen: Surface) -> None:
-        px: int = self.center_x * CELL_SIZE + CELL_SIZE // 2
-        py: int = self.center_y * CELL_SIZE + CELL_SIZE // 2
+        px: int = self.x * CELL_SIZE + CELL_SIZE // 2
+        py: int = self.y * CELL_SIZE + CELL_SIZE // 2
         pygame.draw.circle(
             screen, PACMAN_COLOR, (px, py), CELL_SIZE // 2 - 7.5
         )
