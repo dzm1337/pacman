@@ -1,13 +1,16 @@
-from mazegenerator import MazeGenerator
+from src.parser import Parser
+from src.config import Config
+from src.render import Render 
+from pathlib import Path
 
+def main():
+    # Parse the config file properly, and pass all the data to Config class.
+    path: Path = Path(__file__).parent.parent / "config" / "config.json"
+    parse = Parser(path).parse_config()
 
-def main() -> None:
-    maze: MazeGenerator = MazeGenerator((15, 15))
-    grid = maze.maze
-    for y, row in enumerate(grid):
-        print(f"Row: {y}\n\ncontent:{row}\n")
-        for x, col in enumerate(row):
-            print(f"({x}, {y}): {grid[x][y]}")
+    config = Config(**parse)
+
+    rendering = Render(config).display()
 
 
 if __name__ == "__main__":
