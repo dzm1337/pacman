@@ -1,10 +1,9 @@
-import sys
-from pathlib import Path
 import pygame
-from maze.mazegenerator.mazegenerator import MazeGenerator
-from src.config import Config
-from src.pacman import Pacman
+from pygame import Surface
 
+from src.config import Config
+from src.maze import Maze
+from src.pacman import Pacman
 
 N, E, S, W = 1, 2, 4, 8
 CELL_SIZE = 40
@@ -14,29 +13,33 @@ BACKGROUND = (0, 0, 0)
 WALL_COLOR = (30, 100, 255)
 GUM_COLOR = (255, 220, 100)
 PACMAN_COLOR = (255, 220, 0)
+COLOR_42 = (128, 128, 128)
 
 FPS = 30
 
+
 class Render:
-
-    def __init__(self, config: Config):
-        self.width = config.width
-        self.height = config.height
+    def __init__(self, maze: Maze, config: Config) -> None:
+        self.maze = maze.get_maze
+        self.width, self.height = maze.get_shape
+        self.center_x, self.center_y = maze.find_center_position()
+        self.pacman = Pacman(maze, config)
         self.seed = config.seed
-        self.running = True
-        self.pacman = Pacman(config)
 
-
-    def draw_maze(self, screen, maze):
-        
+    def draw_maze(self, screen: Surface) -> None:
         for y in range(self.height):
             for x in range(self.width):
-                
-                cell = maze[y][x]
+                cell = self.maze[y][x]
                 left = x * CELL_SIZE
                 top = y * CELL_SIZE
                 right = left + CELL_SIZE
                 bottom = top + CELL_SIZE
+
+                if cell == 15:
+                    pygame.draw.rect(
+                        screen, COLOR_42, (left, top, CELL_SIZE, CELL_SIZE)
+                    )
+                    continue
 
                 if cell != 15:
                     pygame.draw.circle(
@@ -48,7 +51,7 @@ class Render:
                         ),
                         4,
                     )
-                
+
                 if cell & N:
                     pygame.draw.line(
                         screen,
@@ -88,18 +91,18 @@ class Render:
                         WALL_WIDTH,
                     )
 
-    def display(self) -> None:
-        maze_generator = MazeGenerator(
-            size=(self.width, self.height),
-            seed=self.seed
+    def draw_pacman(self, screen: Surface) -> None:
+        px: int = self.center_x * CELL_SIZE + CELL_SIZE // 2
+        py: int = self.center_y * CELL_SIZE + CELL_SIZE // 2
+        pygame.draw.circle(
+            screen, PACMAN_COLOR, (px, py), CELL_SIZE // 2 - 7.5
         )
-        
-        maze = maze_generator.maze
-        print(f"MAZE: {maze}")
+
+    def display(self) -> None:
 
         pygame.init()
 
-        screen = pygame.display.set_mode(
+        screen: Surface = pygame.display.set_mode(
             (
                 self.width * CELL_SIZE,
                 self.height * CELL_SIZE,
@@ -109,16 +112,15 @@ class Render:
         pygame.display.set_caption("PAC-MAN")
         clock = pygame.time.Clock()
 
-        self.running = True
-        while self.running:
-
+        running = True
+        while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    self.running = False
+                    running = False
 
             screen.fill(BACKGROUND)
-            self.draw_maze(screen, maze)
-            #self.pacman.spawn_pacman()
+            self.draw_maze(screen)
+            self.draw_pacman(screen)
 
             pygame.display.flip()
             clock.tick(FPS)
