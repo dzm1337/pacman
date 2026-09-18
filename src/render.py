@@ -2,29 +2,30 @@ import pygame
 from pygame import Surface
 
 from src.config import Config
+from src.definitions import (
+    BACKGROUND,
+    CELL_SIZE,
+    COLOR_42,
+    FPS,
+    GUM_COLOR,
+    PACMAN_COLOR,
+    WALL_COLOR,
+    WALL_WIDTH,
+    E,
+    N,
+    S,
+    W,
+)
 from src.maze import Maze
 from src.pacman import Pacman
-
-N, E, S, W = 1, 2, 4, 8
-CELL_SIZE = 40
-WALL_WIDTH = 10
-
-BACKGROUND = (0, 0, 0)
-WALL_COLOR = (30, 100, 255)
-GUM_COLOR = (255, 220, 100)
-PACMAN_COLOR = (255, 220, 0)
-COLOR_42 = (128, 128, 128)
-
-WALLS = {(0, -1): N, (1, 0): E, (0, 1): S, (-1, 0): W}
-FPS = 30
 
 
 class Render:
     def __init__(self, maze: Maze, config: Config) -> None:
         self.maze = maze.get_maze
         self.width, self.height = maze.get_shape
-        self.x, self.y = maze.find_center_position()
         self.pacman = Pacman(maze, config)
+        self.running = True
         self.seed = config.seed
 
     def draw_maze(self, screen: Surface) -> None:
@@ -92,40 +93,49 @@ class Render:
                         WALL_WIDTH,
                     )
 
-    def able_to_move(self, dx: int, dy: int) -> bool:
-        wall = WALLS[(dx, dy)]
-        return not (self.maze[self.y][self.x] & wall)
-
-    def draw_pacman(self, screen: Surface) -> None:
-        px: int = self.x * CELL_SIZE + CELL_SIZE // 2
-        py: int = self.y * CELL_SIZE + CELL_SIZE // 2
-        pygame.draw.circle(
-            screen, PACMAN_COLOR, (px, py), CELL_SIZE // 2 - 7.5
-        )
+    def draw_pacman(self, screen: Surface, dx: int, dy: int) -> None:
+        px: int = dx * CELL_SIZE + CELL_SIZE // 2
+        py: int = dy * CELL_SIZE + CELL_SIZE // 2
+        pygame.draw.circle(screen, PACMAN_COLOR, (px, py), CELL_SIZE // 2 - 12)
 
     def display(self) -> None:
-
-        pygame.init()
-
         screen: Surface = pygame.display.set_mode(
             (
                 self.width * CELL_SIZE,
                 self.height * CELL_SIZE,
-            )
+            ),
+            pygame.SCALED,
         )
 
         pygame.display.set_caption("PAC-MAN")
         clock = pygame.time.Clock()
 
-        running = True
-        while running:
+        self.running = True
+        while self.running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    running = False
+                    self.running = False
+
+            keys = pygame.key.get_pressed()
+
+            dx, dy = 0, 0
+
+            if keys[pygame.K_UP]:
+                dx, dy = 0, -1
+            if keys[pygame.K_DOWN]:
+                dx, dy = 0, 1
+            if keys[pygame.K_LEFT]:
+                dx, dy = -1, 0
+            if keys[pygame.K_RIGHT]:
+                dx, dy = 1, 0
+
+            if (dx, dy) != (0, 0) and self.pacman.able_to_move(dx, dy):
+                self.pacman.x += dx
+                self.pacman.y += dy
 
             screen.fill(BACKGROUND)
             self.draw_maze(screen)
-            self.draw_pacman(screen)
+            self.draw_pacman(screen, self.pacman.x, self.pacman.y)
 
             pygame.display.flip()
             clock.tick(FPS)
