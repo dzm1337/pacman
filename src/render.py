@@ -1,14 +1,17 @@
 import pygame
 from pygame import Surface
 
-from src.config import Config
 from src.definitions import (
     BACKGROUND,
+    BLINKY_COLOR,
     CELL_SIZE,
+    CLYDE_COLOR,
     COLOR_42,
     FPS,
     GUM_COLOR,
+    INKY_COLOR,
     PACMAN_COLOR,
+    PINKY_COLOR,
     WALL_COLOR,
     WALL_WIDTH,
     E,
@@ -16,22 +19,36 @@ from src.definitions import (
     S,
     W,
 )
-from src.maze import Maze
-from src.pacman import Pacman
+from src.ghosts import Blinky, Clyde, Inky, Pinky
+
+GHOST_COLORS = {
+    Blinky: BLINKY_COLOR,
+    Pinky: PINKY_COLOR,
+    Inky: INKY_COLOR,
+    Clyde: CLYDE_COLOR,
+}
+
+from src.game import Game
 
 
 class Render:
-    def __init__(self, maze: Maze, config: Config) -> None:
-        self.maze = maze.get_maze
-        self.width, self.height = maze.get_shape
-        self.pacman = Pacman(maze, config)
+    def __init__(self, game: Game) -> None:
         self.running = True
-        self.seed = config.seed
+        self.game = game
+
+    # draw ghosts
+    def draw_ghosts(self, screen: Surface) -> None:
+        for ghost in self.game.ghosts:
+            px: int = ghost.x * CELL_SIZE + CELL_SIZE // 2
+            py: int = ghost.y * CELL_SIZE + CELL_SIZE // 2
+            color = GHOST_COLORS[type(ghost)]
+            pygame.draw.circle(screen, color, (px, py), CELL_SIZE // 2 - 12)
 
     def draw_maze(self, screen: Surface) -> None:
-        for y in range(self.height):
-            for x in range(self.width):
-                cell = self.maze[y][x]
+        maze = self.game.maze.get_maze
+        for y in range(self.game.height):
+            for x in range(self.game.width):
+                cell = maze[y][x]
                 left = x * CELL_SIZE
                 top = y * CELL_SIZE
                 right = left + CELL_SIZE
@@ -101,8 +118,8 @@ class Render:
     def display(self) -> None:
         screen: Surface = pygame.display.set_mode(
             (
-                self.width * CELL_SIZE,
-                self.height * CELL_SIZE,
+                self.game.width * CELL_SIZE,
+                self.game.height * CELL_SIZE,
             ),
             pygame.SCALED,
         )
@@ -129,13 +146,12 @@ class Render:
             if keys[pygame.K_RIGHT]:
                 dx, dy = 1, 0
 
-            if (dx, dy) != (0, 0) and self.pacman.able_to_move(dx, dy):
-                self.pacman.x += dx
-                self.pacman.y += dy
+            self.game.update(dx, dy)
 
             screen.fill(BACKGROUND)
             self.draw_maze(screen)
-            self.draw_pacman(screen, self.pacman.x, self.pacman.y)
+            self.draw_ghosts(screen)
+            self.draw_pacman(screen, self.game.pacman.x, self.game.pacman.y)
 
             pygame.display.flip()
             clock.tick(FPS)
