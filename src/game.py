@@ -10,6 +10,9 @@ class Game:
         self.config = config
         self.maze_shape = self.maze.get_maze
         self.width, self.height = self.maze.get_shape
+        # list of ghosts with their start positions
+        # if not possible the exact position try to
+        # find the nearest cell
         self.ghosts = [
             Inky(maze, config, *maze.find_nearest_open_cell(0, 0)),
             Pinky(
@@ -26,5 +29,10 @@ class Game:
         ]
         self.pacman = Pacman(maze, config)
 
-    def update(self, dx: int, dy: int) -> None:
-        self.pacman.move(dx, dy)
+    # We're going to use this class to move every type of
+    # Entity regardless of being pacman of ghost
+    def update(self, dx: int, dy: int, dt: float) -> None:
+        if (dx, dy) != (0, 0):
+            self.pacman.direction = (dx, dy)
+        if self.pacman.tick(dt):
+            self.pacman.move(*self.pacman.direction)
