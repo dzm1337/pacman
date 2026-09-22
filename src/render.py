@@ -133,6 +133,7 @@ class Render:
                 if event.type == pygame.QUIT:
                     self.running = False
 
+            dt: float = clock.tick(FPS) / 1000
             keys = pygame.key.get_pressed()
 
             dx, dy = 0, 0
@@ -146,13 +147,12 @@ class Render:
             if keys[pygame.K_RIGHT]:
                 dx, dy = 1, 0
 
-            self.game.update(dx, dy)
+            self.game.update(dx, dy, dt)
 
             screen.fill(BACKGROUND)
             self.draw_maze(screen)
             self.draw_ghosts(screen)
             self.draw_pacman(screen, self.game.pacman.x, self.game.pacman.y)
-
             pygame.display.flip()
-            clock.tick(FPS)
+
         pygame.quit()
