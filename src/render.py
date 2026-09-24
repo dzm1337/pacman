@@ -3,15 +3,10 @@ from pygame import Surface
 
 from src.definitions import (
     BACKGROUND,
-    BLINKY_COLOR,
     CELL_SIZE,
-    CLYDE_COLOR,
     COLOR_42,
     FPS,
     GUM_COLOR,
-    INKY_COLOR,
-    PACMAN_COLOR,
-    PINKY_COLOR,
     WALL_COLOR,
     WALL_WIDTH,
     E,
@@ -19,15 +14,6 @@ from src.definitions import (
     S,
     W,
 )
-from src.ghosts import Blinky, Clyde, Inky, Pinky
-
-GHOST_COLORS = {
-    Blinky: BLINKY_COLOR,
-    Pinky: PINKY_COLOR,
-    Inky: INKY_COLOR,
-    Clyde: CLYDE_COLOR,
-}
-
 from src.game import Game
 
 
@@ -41,8 +27,22 @@ class Render:
         for ghost in self.game.ghosts:
             px: int = ghost.x * CELL_SIZE + CELL_SIZE // 2
             py: int = ghost.y * CELL_SIZE + CELL_SIZE // 2
-            color = GHOST_COLORS[type(ghost)]
+            color = ghost.color
             pygame.draw.circle(screen, color, (px, py), CELL_SIZE // 2 - 12)
+
+    def draw_gums(self, screen: Surface) -> None:
+        for gum in self.game.pacgums:
+            left = gum[1] * CELL_SIZE
+            top = gum[0] * CELL_SIZE
+            pygame.draw.circle(
+                screen,
+                GUM_COLOR,
+                (
+                    left + CELL_SIZE // 2,
+                    top + CELL_SIZE // 2,
+                ),
+                4,
+            )
 
     def draw_maze(self, screen: Surface) -> None:
         maze = self.game.maze.get_maze
@@ -59,17 +59,6 @@ class Render:
                         screen, COLOR_42, (left, top, CELL_SIZE, CELL_SIZE)
                     )
                     continue
-
-                if cell != 15:
-                    pygame.draw.circle(
-                        screen,
-                        GUM_COLOR,
-                        (
-                            left + CELL_SIZE // 2,
-                            top + CELL_SIZE // 2,
-                        ),
-                        4,
-                    )
 
                 if cell & N:
                     pygame.draw.line(
@@ -113,7 +102,9 @@ class Render:
     def draw_pacman(self, screen: Surface, dx: int, dy: int) -> None:
         px: int = dx * CELL_SIZE + CELL_SIZE // 2
         py: int = dy * CELL_SIZE + CELL_SIZE // 2
-        pygame.draw.circle(screen, PACMAN_COLOR, (px, py), CELL_SIZE // 2 - 12)
+        pygame.draw.circle(
+            screen, self.game.pacman.color, (px, py), CELL_SIZE // 2 - 12
+        )
 
     def display(self) -> None:
         screen: Surface = pygame.display.set_mode(
@@ -148,8 +139,8 @@ class Render:
                 dx, dy = 1, 0
 
             self.game.update(dx, dy, dt)
-
             screen.fill(BACKGROUND)
+            self.draw_gums(screen)
             self.draw_maze(screen)
             self.draw_ghosts(screen)
             self.draw_pacman(screen, self.game.pacman.x, self.game.pacman.y)
