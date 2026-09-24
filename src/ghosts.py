@@ -14,8 +14,15 @@ class State(Enum):
 
 
 class Ghost(Entity, ABC):
-    def __init__(self, maze: Maze, config: Config, x: int, y: int) -> None:
-        super().__init__(maze, config, x, y)
+    def __init__(
+        self,
+        maze: Maze,
+        config: Config,
+        x: int,
+        y: int,
+        color: tuple[int, int, int],
+    ) -> None:
+        super().__init__(maze, config, x, y, color=color)
 
     # @abstractmethod 0, 0 just for tests
     def target(self):
