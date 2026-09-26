@@ -138,8 +138,11 @@ class Render:
             if keys[pygame.K_RIGHT]:
                 dx, dy = 1, 0
 
-            self.game.update(dx, dy, dt)
             screen.fill(BACKGROUND)
+            self.game.update(dx, dy, dt)
+            if self.game.is_level_won:
+                print("WON")
+                self.running = False
             self.draw_gums(screen)
             self.draw_maze(screen)
             self.draw_ghosts(screen)

@@ -56,27 +56,34 @@ class Game:
             for y in range(self.height)
             if self.maze_shape[y][x] != 15
         }
+        # Removes pacman initial position
         self.pacgums.discard((self.pacman.y, self.pacman.x))
 
-    # We're going to use this method to move every type of
-    # Entity regardless of being pacman of ghost
+    @property
+    def is_level_won(self) -> bool:
+        return not self.pacgums
 
     def update(self, dx: int, dy: int, dt: float) -> None:
+        """
+        Advance the game by one frame.
+        """
+        # Block all the updates if the level is won
+        if self.is_level_won:
+            return
+
         if (dx, dy) != (0, 0):
             self.pacman.direction = (dx, dy)
+
         if self.pacman.tick(dt):
             self.pacman.move(*self.pacman.direction)
             self.eat_gum()
 
     def eat_gum(self) -> None:
+        """
+        Remove the pacgum at pacman's position, if any,
+        and add its points to the score.
+        """
         pos = (self.pacman.y, self.pacman.x)
-        eaten = True if pos in self.pacgums else False
-        if eaten:
-            print(
-                f"Amount of Pacgums left = {len(self.pacgums)}\nPos = {pos}\nEaten?: {eaten}\nCurrent score: {self.score}\n"
-            )
-        # if pacman it's in the same position as a pacgum
-        # delete it from the set and eventually remove it from the maze
         if pos in self.pacgums:
             self.pacgums.remove(pos)
             self.score += self.config.points_per_pacgum
