@@ -23,12 +23,35 @@ class Render:
         self.game = game
 
     # draw ghosts
+   # def draw_ghosts(self, screen: Surface) -> None:
+    #    for ghost in self.game.ghosts:
+     #       px: int = ghost.x * CELL_SIZE + CELL_SIZE // 2
+      #      py: int = ghost.y * CELL_SIZE + CELL_SIZE // 2
+       #     color = ghost.color
+        #    pygame.draw.circle(screen, color, (px, py), CELL_SIZE // 2 - 12)
+
+    def _load_sprite(self, path: str) -> Surface:
+        image = pygame.image.load(path).convert_alpha()
+        image = pygame.transform.scale(image, (CELL_SIZE // 1.5, CELL_SIZE // 1.5))
+        return image
+
     def draw_ghosts(self, screen: Surface) -> None:
         for ghost in self.game.ghosts:
             px: int = ghost.x * CELL_SIZE + CELL_SIZE // 2
             py: int = ghost.y * CELL_SIZE + CELL_SIZE // 2
-            color = ghost.color
-            pygame.draw.circle(screen, color, (px, py), CELL_SIZE // 2 - 12)
+
+            sprite = self._load_sprite(ghost.sprite_path)
+            rect = sprite.get_rect(center=(px, py))
+            screen.blit(sprite, rect)
+
+    def draw_pacman(self, screen: Screen, dx: int, dy: int):
+        px: int = dx * CELL_SIZE + CELL_SIZE // 2
+        py: int = dy * CELL_SIZE + CELL_SIZE // 2
+
+        sprite = self._load_sprite(self.game.pacman.sprite_path)
+        rect = sprite.get_rect(center=(px, py))
+        screen.blit(sprite, rect)
+
 
     def draw_gums(self, screen: Surface) -> None:
         for gum in self.game.pacgums:
@@ -99,12 +122,12 @@ class Render:
                         WALL_WIDTH,
                     )
 
-    def draw_pacman(self, screen: Surface, dx: int, dy: int) -> None:
-        px: int = dx * CELL_SIZE + CELL_SIZE // 2
-        py: int = dy * CELL_SIZE + CELL_SIZE // 2
-        pygame.draw.circle(
-            screen, self.game.pacman.color, (px, py), CELL_SIZE // 2 - 12
-        )
+    #def draw_pacman(self, screen: Surface, dx: int, dy: int) -> None:
+     #   px: int = dx * CELL_SIZE + CELL_SIZE // 2
+      #  py: int = dy * CELL_SIZE + CELL_SIZE // 2
+       # pygame.draw.circle(
+        #    screen, self.game.pacman.color, (px, py), CELL_SIZE // 2 - 12
+        #)
 
     def display(self) -> None:
         screen: Surface = pygame.display.set_mode(
@@ -137,6 +160,9 @@ class Render:
                 dx, dy = -1, 0
             if keys[pygame.K_RIGHT]:
                 dx, dy = 1, 0
+
+            for idx, ghost in enumerate(self.game.ghosts):
+                print(f"Ghost {idx} direction: ", ghost.random_move())
 
             self.game.update(dx, dy, dt)
             screen.fill(BACKGROUND)

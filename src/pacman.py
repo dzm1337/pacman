@@ -2,9 +2,9 @@ from src.entity import Entity
 
 
 class Pacman(Entity):
-    def __init__(self, maze, config, color) -> None:
+    def __init__(self, maze, config, color, sprite_path) -> None:
         super().__init__(
-            maze, config, *maze.find_center_position(), color=color
+            maze, config, *maze.find_center_position(), color=color, sprite_path=sprite_path
         )
         self.pp_pacgum: int = config.points_per_pacgum
         self.pp_superpacgum: int = config.point_per_superpacgum

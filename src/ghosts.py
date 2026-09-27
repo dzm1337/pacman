@@ -1,5 +1,6 @@
 from abc import ABC
 from enum import Enum
+import random
 
 from src.config import Config
 from src.entity import Entity
@@ -21,8 +22,9 @@ class Ghost(Entity, ABC):
         x: int,
         y: int,
         color: tuple[int, int, int],
+        sprite_path: str,
     ) -> None:
-        super().__init__(maze, config, x, y, color=color)
+        super().__init__(maze, config, x, y, color=color, sprite_path=sprite_path)
 
     # @abstractmethod 0, 0 just for tests
     def target(self):
@@ -30,6 +32,12 @@ class Ghost(Entity, ABC):
 
     # Change the state of the Ghost, chase / scatter / frightened / eaten
     def change_state(self): ...
+
+
+    def random_move(self):
+        directions: list[str] = ["UP", "DOWN", "LEFT", "RIGHT"]
+        choice: str = random.choice(directions)
+        return choice
 
 
 class Inky(Ghost):

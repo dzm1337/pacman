@@ -11,6 +11,7 @@ class Entity:
         x: int,
         y: int,
         color: tuple[int, int, int],
+        sprite_path: str,
     ) -> None:
         self.color = color
         self.maze = maze
@@ -19,6 +20,7 @@ class Entity:
         self.direction = 0, 0
         self.x, self.y = x, y
         self.vel = 5
+        self.sprite_path = sprite_path
 
     def able_to_move(self, dx: int, dy: int) -> bool:
         """

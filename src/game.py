@@ -27,27 +27,31 @@ class Game:
                 config,
                 *maze.find_nearest_open_cell(0, 0),
                 color=INKY_COLOR,
+                sprite_path="assets/inky.png",
             ),
             Pinky(
                 maze,
                 config,
                 *maze.find_nearest_open_cell(self.width - 1, 0),
                 color=PINKY_COLOR,
+                sprite_path="assets/pinky.png",
             ),
             Clyde(
                 maze,
                 config,
                 *maze.find_nearest_open_cell(0, self.height - 1),
                 color=CLYDE_COLOR,
+                sprite_path="assets/clyde.png",
             ),
             Blinky(
                 maze,
                 config,
                 *maze.find_nearest_open_cell(self.width - 1, self.height - 1),
                 color=BLINKY_COLOR,
+                sprite_path="assets/blinky.png",
             ),
         ]
-        self.pacman = Pacman(maze, config, PACMAN_COLOR)
+        self.pacman = Pacman(maze, config, PACMAN_COLOR, "assets/pacman.png")
         # Create a set who has tuples who represent
         # each coordinate of the pacgums
         self.pacgums: set[tuple[int, int]] = {
