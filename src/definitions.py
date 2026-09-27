@@ -1,3 +1,5 @@
+from enum import Enum, auto
+
 N, E, S, W = 1, 2, 4, 8
 CELL_SIZE = 40
 WALL_WIDTH = 10
@@ -13,3 +15,16 @@ PINKY_COLOR = (255, 184, 255)
 INKY_COLOR = (0, 255, 255)
 CLYDE_COLOR = (255, 184, 82)
 FRIGHTENED_COLOR = (33, 33, 255)
+
+
+class GameState(Enum):
+    PLAYING = auto()
+    WON = auto()
+    LOST = auto()
+
+
+class GhostState(Enum):
+    CHASE = auto()
+    SCATTER = auto()
+    FRIGHTENED = auto()
+    EATEN = auto()

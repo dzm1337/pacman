@@ -1,16 +1,9 @@
 from abc import ABC
-from enum import Enum
 
+from src.definitions import GhostState
 from src.config import Config
 from src.entity import Entity
 from src.maze import Maze
-
-
-class State(Enum):
-    CHASE = 0
-    SCATTER = 1
-    FRIGHTENED = 2
-    EATEN = 3
 
 
 class Ghost(Entity, ABC):
