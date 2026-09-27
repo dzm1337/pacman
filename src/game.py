@@ -12,12 +12,13 @@ from src.pacman import Pacman
 
 
 class Game:
-    def __init__(self, maze: Maze, config: Config):
+    def __init__(self, maze: Maze, config: Config) -> None:
         self.maze = maze
         self.config = config
         self.maze_shape = self.maze.get_maze
         self.width, self.height = self.maze.get_shape
         self.score = 0
+        self.lives = self.config.lives
         # list of ghosts with their start positions
         # if not possible the exact position try to
         # find the nearest cell
@@ -48,8 +49,10 @@ class Game:
             ),
         ]
         self.pacman = Pacman(maze, config, PACMAN_COLOR)
+
         # Create a set who has tuples who represent
         # each coordinate of the pacgums
+
         self.pacgums: set[tuple[int, int]] = {
             (y, x)
             for x in range(self.width)
@@ -63,9 +66,23 @@ class Game:
     def is_level_won(self) -> bool:
         return not self.pacgums
 
+    def _reset_positions(self) -> None:
+        self.pacman.direction = (0, 0)
+        self.pacman.x, self.pacman.y = self.pacman.spawn_pos
+        for ghost in self.ghosts:
+            ghost.x, ghost.y = ghost.spawn_pos
+
+    def _check_collision(self) -> None:
+        for ghost in self.ghosts:
+            ghost_pos = ghost.x, ghost.y
+            pacman_pos = self.pacman.x, self.pacman.y
+            if pacman_pos == ghost_pos:
+                self.lives -= 1
+                self._reset_positions()
+
     def update(self, dx: int, dy: int, dt: float) -> None:
         """
-        Advance the game by one frame.
+        Advance the game by one frame
         """
         # Block all the updates if the level is won
         if self.is_level_won:
@@ -77,6 +94,8 @@ class Game:
         if self.pacman.tick(dt):
             self.pacman.move(*self.pacman.direction)
             self.eat_gum()
+
+        self._check_collision()
 
     def eat_gum(self) -> None:
         """
