@@ -19,6 +19,7 @@ class Entity:
         self.move_timer: float = 0.0
         self.direction = 0, 0
         self.x, self.y = x, y
+        self.spawn_pos = x, y
         self.vel = 5
         self.sprite_path = sprite_path
 

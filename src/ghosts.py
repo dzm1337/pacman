@@ -1,17 +1,14 @@
 from abc import ABC
+<<<<<<< HEAD
 from enum import Enum
 import random
+=======
+>>>>>>> 8bfb217b029fc21a82f514d32a864741aa66eb04
 
+from src.definitions import GhostState
 from src.config import Config
 from src.entity import Entity
 from src.maze import Maze
-
-
-class State(Enum):
-    CHASE = 0
-    SCATTER = 1
-    FRIGHTENED = 2
-    EATEN = 3
 
 
 class Ghost(Entity, ABC):

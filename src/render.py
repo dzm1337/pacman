@@ -161,11 +161,18 @@ class Render:
             if keys[pygame.K_RIGHT]:
                 dx, dy = 1, 0
 
+<<<<<<< HEAD
             for idx, ghost in enumerate(self.game.ghosts):
                 print(f"Ghost {idx} direction: ", ghost.random_move())
 
             self.game.update(dx, dy, dt)
+=======
+>>>>>>> 8bfb217b029fc21a82f514d32a864741aa66eb04
             screen.fill(BACKGROUND)
+            self.game.update(dx, dy, dt)
+            if self.game.is_level_won:
+                print("WON")
+                self.running = False
             self.draw_gums(screen)
             self.draw_maze(screen)
             self.draw_ghosts(screen)
