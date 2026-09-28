@@ -2,9 +2,11 @@ from src.config import Config
 from src.definitions import (
     BLINKY_COLOR,
     CLYDE_COLOR,
+    DIRECTIONS,
     INKY_COLOR,
     PACMAN_COLOR,
     PINKY_COLOR,
+    GameState,
 )
 from src.ghosts import Blinky, Clyde, Inky, Pinky
 from src.maze import Maze
@@ -18,7 +20,10 @@ class Game:
         self.maze_shape = self.maze.get_maze
         self.width, self.height = self.maze.get_shape
         self.score = 0
+        self.level = 1
+        self.state = GameState.PLAYING
         self.lives = self.config.lives
+        self.time_left = config.level_max_time
         # list of ghosts with their start positions
         # if not possible the exact position try to
         # find the nearest cell
@@ -83,21 +88,30 @@ class Game:
                 self.lives -= 1
                 self._reset_positions()
 
-    def update(self, dx: int, dy: int, dt: float) -> None:
+    @property
+    def is_alive(self) -> bool:
+        return self.lives > 0 or self.time_left > 0
+
+    def change_direction(self, key: int) -> None:
+        if key in DIRECTIONS:
+            self.pacman.direction = DIRECTIONS[key]
+
+    def update(self, dt: float) -> None:
         """
         Advance the game by one frame
         """
         # Block all the updates if the level is won
-        if self.is_level_won:
-            return
 
-        if (dx, dy) != (0, 0):
-            self.pacman.direction = (dx, dy)
+        if self.is_level_won:
+            self.state = GameState.WON
+        elif not self.is_alive:
+            self.state = GameState.LOST
 
         if self.pacman.tick(dt):
             self.pacman.move(*self.pacman.direction)
             self.eat_gum()
 
+        self.time_left -= dt
         self._check_collision()
 
     def eat_gum(self) -> None:
