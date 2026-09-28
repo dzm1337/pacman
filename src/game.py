@@ -52,12 +52,7 @@ class Game:
                 sprite_path="assets/blinky.png",
             ),
         ]
-<<<<<<< HEAD
         self.pacman = Pacman(maze, config, PACMAN_COLOR, "assets/pacman.png")
-=======
-        self.pacman = Pacman(maze, config, PACMAN_COLOR)
-
->>>>>>> 8bfb217b029fc21a82f514d32a864741aa66eb04
         # Create a set who has tuples who represent
         # each coordinate of the pacgums
 
