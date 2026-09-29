@@ -27,10 +27,27 @@ class Ghost(Entity, ABC):
     # Change the state of the Ghost, chase / scatter / frightened / eaten
     def change_state(self): ...
 
-    def random_move(self):
+    def random_move(self, dt):
         directions: list[str] = ["UP", "DOWN", "LEFT", "RIGHT"]
         choice: str = random.choice(directions)
-        return choice
+
+        if choice == "UP":
+            dx, dy = 0, -1
+
+        if choice == "DOWN":
+            dx, dy = 0, 1
+
+        if choice == "LEFT":
+            dx, dy = -1, 0
+
+        if choice == "RIGHT":
+            dx, dy = 1, 0
+
+        if self.able_to_move(dx, dy) and (dx, dy) != (0, 0):
+                self.x += dx
+                self.y += dy
+        else:
+            self.random_move(dt)
 
 
 class Inky(Ghost):

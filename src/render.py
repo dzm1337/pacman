@@ -163,7 +163,10 @@ class Render:
                 dx, dy = 1, 0
 
             screen.fill(BACKGROUND)
-            self.game.update(dx, dy, dt)
+            self.game.update(dx, dy, dt, self.game.ghosts)
+            #for ghost in self.game.ghosts:
+            #    ghost.random_move(dt)
+
             if self.game.is_level_won:
                 print("WON")
                 self.running = False

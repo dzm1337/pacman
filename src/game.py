@@ -9,6 +9,7 @@ from src.definitions import (
 from src.ghosts import Blinky, Clyde, Inky, Pinky
 from src.maze import Maze
 from src.pacman import Pacman
+from src.ghosts import Ghost
 
 
 class Game:
@@ -83,7 +84,7 @@ class Game:
                 self.lives -= 1
                 self._reset_positions()
 
-    def update(self, dx: int, dy: int, dt: float) -> None:
+    def update(self, dx: int, dy: int, dt: float, ghosts: list[Ghost]) -> None:
         """
         Advance the game by one frame
         """
@@ -96,6 +97,8 @@ class Game:
 
         if self.pacman.tick(dt):
             self.pacman.move(*self.pacman.direction)
+            for ghost in ghosts:
+                ghost.random_move(dt)
             self.eat_gum()
 
         self._check_collision()
