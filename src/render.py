@@ -45,7 +45,7 @@ class Render:
             rect = sprite.get_rect(center=(px, py))
             screen.blit(sprite, rect)
 
-    def draw_pacman(self, screen: Surface, dx: int, dy: int):
+    def draw_pacman(self, screen: Surface, dx: int, dy: int) -> None:
         px: int = dx * CELL_SIZE + CELL_SIZE // 2
         py: int = dy * CELL_SIZE + CELL_SIZE // 2
 
@@ -207,10 +207,14 @@ class Render:
             if self.screen_state == Screen.MENU:
                 self.draw_menu(screen)
             elif self.screen_state == Screen.PLAYING:
-                self.game.update(dt)
-                self.draw_game(screen)
-                if self.game.state != GameState.PLAYING:
-                    self.running = False
+                if self.game.state == GameState.PLAYING:
+                    self.draw_game(screen)
+                    self.game.update(dt)
+                elif self.game.state == GameState.LOST:
+                    self.game.reset_game()
+                elif self.game.state == GameState.WON:
+                    self.game.next_level()
+
             pygame.display.flip()
 
         pygame.quit()

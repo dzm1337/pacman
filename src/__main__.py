@@ -29,8 +29,7 @@ def main() -> None:
 
     path: Path = parse_args(sys.argv)
     config = Config(**Parser(path).parse_config())
-    maze = Maze(config)
-    game = Game(maze, config)
+    game = Game(config)
     Render(game).display()
 
 
