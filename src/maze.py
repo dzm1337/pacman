@@ -1,16 +1,20 @@
 from mazegenerator import MazeGenerator
+from src.parser import fail
 
 from src.config import Config
 
 
 class Maze:
-    def __init__(self, config: Config) -> None:
-        self.width = config.width
-        self.height = config.height
-        self.seed = config.seed
-        self.maze = MazeGenerator(
-            size=(self.width, self.height), seed=self.seed
-        )
+    def __init__(self, width: int, height: int, seed: int) -> None:
+        self.width = width
+        self.height = height
+        self.seed = seed
+        try:
+            self.maze = MazeGenerator(
+                size=(self.width, self.height), seed=self.seed
+            )
+        except Exception as e:
+            fail(f"maze Generator Failed: {e}")
 
     @property
     def get_shape(self) -> tuple[int, int]:
@@ -26,7 +30,9 @@ class Maze:
         """
         return self.maze.maze
 
-    def find_nearest_open_cell(self, center_x: int, center_y: int):
+    def find_nearest_open_cell(
+        self, center_x: int, center_y: int
+    ) -> tuple[int, int]:
         maze: list[list[int]] = self.get_maze
         max_distance = max(self.width, self.height)
 
