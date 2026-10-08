@@ -8,8 +8,8 @@ WALL_WIDTH = 10
 BACKGROUND = (0, 0, 0)
 WALL_COLOR = (30, 100, 255)
 GUM_COLOR = (255, 220, 100)
+MAX_LEVEL = 10
 PACMAN_COLOR = (255, 220, 0)
-RANDOM_SEED = 0
 COLOR_42 = (128, 128, 128)
 FPS = 60
 WALLS = {(0, -1): N, (1, 0): E, (0, 1): S, (-1, 0): W}
@@ -48,3 +48,4 @@ class Screen(Enum):
     PLAYING = auto()
     MENU = auto()
     GAME_OVER = auto()
+    WON = auto()
