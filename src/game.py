@@ -10,9 +10,11 @@ from src.definitions import (
     PINKY_COLOR,
     GameState,
 )
+from src.definitions import UP, DOWN, LEFT, RIGHT
 from src.ghosts import Blinky, Clyde, Inky, Pinky
 from src.maze import Maze
 from src.pacman import Pacman
+from src.ghosts import Ghost
 
 
 class Game:
@@ -131,7 +133,7 @@ class Game:
         elif not self.is_alive:
             self.state = GameState.LOST
 
-    def update(self, dt: float) -> None:
+    def update(self, direction, dt: float) -> None:
         """
         Advance the game by one frame
         """
@@ -140,7 +142,9 @@ class Game:
             return
 
         if self.pacman.tick(dt):
-            self.pacman.move(*self.pacman.direction)
+            self.pacman.move(direction)
+            for ghost in self.ghosts:
+                ghost.move()
             self.eat_gum()
 
         self._decide_state()

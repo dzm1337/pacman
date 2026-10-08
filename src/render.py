@@ -19,6 +19,11 @@ from src.definitions import (
     S,
     Screen,
     W,
+    UP,
+    DOWN,
+    LEFT,
+    RIGHT,
+    STILL
 )
 from src.game import Game
 
