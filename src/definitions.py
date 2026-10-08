@@ -15,6 +15,12 @@ PINKY_COLOR = (255, 184, 255)
 INKY_COLOR = (0, 255, 255)
 CLYDE_COLOR = (255, 184, 82)
 FRIGHTENED_COLOR = (33, 33, 255)
+UP = 0, -1
+DOWN = 0, 1
+LEFT = -1, 0
+RIGHT = 1, 0
+STILL = 0, 0
+
 
 
 class GameState(Enum):

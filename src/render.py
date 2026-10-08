@@ -13,6 +13,11 @@ from src.definitions import (
     N,
     S,
     W,
+    UP,
+    DOWN,
+    LEFT,
+    RIGHT,
+    STILL
 )
 from src.game import Game
 
@@ -151,19 +156,19 @@ class Render:
             dt: float = clock.tick(FPS) / 1000
             keys = pygame.key.get_pressed()
 
-            dx, dy = 0, 0
+            dir = STILL
 
             if keys[pygame.K_UP]:
-                dx, dy = 0, -1
+                dir = UP
             if keys[pygame.K_DOWN]:
-                dx, dy = 0, 1
+                dir = DOWN 
             if keys[pygame.K_LEFT]:
-                dx, dy = -1, 0
+                dir = LEFT
             if keys[pygame.K_RIGHT]:
-                dx, dy = 1, 0
+                dir = RIGHT
 
             screen.fill(BACKGROUND)
-            self.game.update(dx, dy, dt, self.game.ghosts)
+            self.game.update(dir, dt)
             #for ghost in self.game.ghosts:
             #    ghost.random_move(dt)
 

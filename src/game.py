@@ -6,6 +6,7 @@ from src.definitions import (
     PACMAN_COLOR,
     PINKY_COLOR,
 )
+from src.definitions import UP, DOWN, LEFT, RIGHT
 from src.ghosts import Blinky, Clyde, Inky, Pinky
 from src.maze import Maze
 from src.pacman import Pacman
@@ -56,7 +57,6 @@ class Game:
         self.pacman = Pacman(maze, config, PACMAN_COLOR, "assets/pacman.png")
         # Create a set who has tuples who represent
         # each coordinate of the pacgums
-
         self.pacgums: set[tuple[int, int]] = {
             (y, x)
             for x in range(self.width)
@@ -84,7 +84,7 @@ class Game:
                 self.lives -= 1
                 self._reset_positions()
 
-    def update(self, dx: int, dy: int, dt: float, ghosts: list[Ghost]) -> None:
+    def update(self, direction, dt: float)-> None:
         """
         Advance the game by one frame
         """
@@ -92,13 +92,10 @@ class Game:
         if self.is_level_won:
             return
 
-        if (dx, dy) != (0, 0):
-            self.pacman.direction = (dx, dy)
-
         if self.pacman.tick(dt):
-            self.pacman.move(*self.pacman.direction)
-            for ghost in ghosts:
-                ghost.random_move(dt)
+            self.pacman.move(direction)
+            for ghost in self.ghosts:
+                ghost.move()
             self.eat_gum()
 
         self._check_collision()
