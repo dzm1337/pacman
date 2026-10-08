@@ -3,7 +3,6 @@ from pathlib import Path
 
 from src.config import Config
 from src.game import Game
-from src.maze import Maze
 from src.parser import Parser, fail
 from src.render import Render
 
@@ -29,8 +28,7 @@ def main() -> None:
 
     path: Path = parse_args(sys.argv)
     config = Config(**Parser(path).parse_config())
-    maze = Maze(config)
-    game = Game(maze, config)
+    game = Game(config)
     Render(game).display()
 
 
