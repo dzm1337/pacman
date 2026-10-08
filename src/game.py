@@ -1,3 +1,5 @@
+import random
+
 from src.config import Config
 from src.definitions import (
     BLINKY_COLOR,
@@ -7,11 +9,10 @@ from src.definitions import (
     PACMAN_COLOR,
     PINKY_COLOR,
     GameState,
-    RANDOM_SEED,
 )
 from src.ghosts import Blinky, Clyde, Inky, Pinky
-from src.pacman import Pacman
 from src.maze import Maze
+from src.pacman import Pacman
 
 
 class Game:
@@ -38,7 +39,7 @@ class Game:
     def _level_seed(self) -> int:
         if self.level == 1:
             return self.config.seed
-        return RANDOM_SEED
+        return random.randint(0, 2**31)
 
     def _setup_level(self) -> None:
         self.state = GameState.PLAYING
@@ -124,29 +125,25 @@ class Game:
         if key in DIRECTIONS:
             self.pacman.direction = DIRECTIONS[key]
 
+    def _decide_state(self) -> None:
+        if self.is_level_won:
+            self.state = GameState.WON
+        elif not self.is_alive:
+            self.state = GameState.LOST
+
     def update(self, dt: float) -> None:
         """
         Advance the game by one frame
         """
-        # Block all the updates if the level is won
 
         if self.state != GameState.PLAYING:
-            return
-
-        if self.is_level_won:
-            self.state = GameState.WON
-            return
-        elif not self.is_alive:
-            self.state = GameState.LOST
             return
 
         if self.pacman.tick(dt):
             self.pacman.move(*self.pacman.direction)
             self.eat_gum()
 
-        print(f"lives left: {self.lives}")
-        print(f"time left: {self.time_left}")
-
+        self._decide_state()
         self.time_left -= dt
         self._check_collision()
 

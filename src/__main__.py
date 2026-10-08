@@ -3,7 +3,6 @@ from pathlib import Path
 
 from src.config import Config
 from src.game import Game
-from src.maze import Maze
 from src.parser import Parser, fail
 from src.render import Render
 
