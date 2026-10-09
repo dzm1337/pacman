@@ -19,11 +19,6 @@ from src.definitions import (
     S,
     Screen,
     W,
-    UP,
-    DOWN,
-    LEFT,
-    RIGHT,
-    STILL
 )
 from src.game import Game
 
@@ -246,7 +241,8 @@ class Render:
                     self._select_win_option,
                 )
             elif self.screen_state == Screen.PLAYING:
-                self.game.change_direction(event.key)
+                print(event.key)
+                self.game.move_pacman(event.key)
 
     def draw_game(self, screen: Surface) -> None:
         self.draw_gums(screen)
@@ -281,6 +277,7 @@ class Render:
                 self.draw_menu(screen)
             elif self.screen_state == Screen.PLAYING:
                 if self.game.state == GameState.PLAYING:
+                    self.game.move_ghost(dt)
                     self.draw_game(screen)
                     self.game.update(dt)
                 elif self.game.state == GameState.LOST:
