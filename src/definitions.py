@@ -26,14 +26,14 @@ STILL = 0, 0
 
 
 DIRECTIONS = {
-    pygame.K_UP: (0, -1),
-    pygame.K_w: (0, -1),
-    pygame.K_DOWN: (0, 1),
-    pygame.K_s: (0, 1),
-    pygame.K_LEFT: (-1, 0),
-    pygame.K_a: (-1, 0),
-    pygame.K_RIGHT: (1, 0),
-    pygame.K_d: (1, 0),
+    pygame.K_UP: UP,
+    pygame.K_w: UP,
+    pygame.K_DOWN: DOWN,
+    pygame.K_s: DOWN,
+    pygame.K_LEFT: LEFT,
+    pygame.K_a: LEFT,
+    pygame.K_RIGHT: RIGHT,
+    pygame.K_d: RIGHT,
 }
 
 
