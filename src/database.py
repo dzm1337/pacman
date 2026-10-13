@@ -27,6 +27,7 @@ class Database:
         """
         with closing(sqlite3.connect(DB_PATH)) as con:
             cur = con.execute(sql, params)
+            con.commit()
             return cur.rowcount
 
     def fetch_all(self, sql: str, params: tuple = ()) -> list[tuple]:
@@ -40,24 +41,45 @@ class Database:
         """
         Check if a name already exists in a database
         """
-        return self.fetch_all(f"SELECT * FROM highscore WHERE name = '{name}'")
+        return self.fetch_all(
+            "SELECT * FROM highscore WHERE name = ?", (name,)
+        )
+
+    def check_score_player(self, name: str) -> list[tuple]:
+        return self.fetch_all(
+            "SELECT score FROM highscore WHERE name = ?", (name,)
+        )
 
     def insert_player(self, name: str, score: int) -> int:
         """
         Insert a player in a database
         """
-        return self.execute(f"""
+        return self.execute(
+            """
         INSERT INTO highscore(name, score)
-        VALUES ('{name}', {score});
-        """)
+        VALUES (?, ?);
+        """,
+            (name, score),
+        )
 
     def update_score(self, name: str, new_score: int) -> int:
         """
         Update the score of a player that
         is already in the database
         """
-        return self.execute(f"""
+        return self.execute(
+            """
         UPDATE highscore
-        SET score = {new_score}
-        WHERE name = '{name}';
-        """)
+        SET score = ?
+        WHERE name = ?;
+        """,
+            (new_score, name),
+        )
+
+    def top_scores(self, limit: int = 10) -> list[tuple]:
+        return self.fetch_all(
+            """
+        SELECT name, score FROM highscore ORDER BY score DESC LIMIT ?
+        """,
+            (limit,),
+        )

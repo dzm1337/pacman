@@ -1,6 +1,7 @@
 import random
 
 from src.config import Config
+from src.database import Database
 from src.definitions import (
     BLINKY_COLOR,
     CLYDE_COLOR,
@@ -17,13 +18,28 @@ from src.pacman import Pacman
 
 class Game:
     def __init__(self, config: Config) -> None:
+        self.db = Database()
+        self.db.initialize_database()
         self.config = config
         self.score = 0
         self.level = 1
         self.state = GameState.PLAYING
         self.lives = self.config.lives
         self.time_left = config.level_max_time
+        self.menu_options = ["Start", "Quit"]
+        self.options = [
+            "Leaderboard",
+            "Save Score",
+            "Play Again",
+            "Menu",
+            "Quit",
+        ]
+        self.options_index = 0
+        self.menu_index = 0
         self._setup_level()
+
+    def valid_player_name(self, name: str) -> bool:
+        return name.isalnum() and len(name) <= 12
 
     @property
     def is_level_won(self) -> bool:
