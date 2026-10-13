@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 
 from src.config import Config
+from src.draw import Draw
 from src.game import Game
 from src.parser import Parser, fail
 from src.render import Render
@@ -29,7 +30,8 @@ def main() -> None:
     path: Path = parse_args(sys.argv)
     config = Config(**Parser(path).parse_config())
     game = Game(config)
-    Render(game).display()
+    draw = Draw(game)
+    Render(draw, game).display()
 
 
 if __name__ == "__main__":

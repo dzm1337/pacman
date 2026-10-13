@@ -1,191 +1,27 @@
 from collections.abc import Callable
 
 import pygame
-from pygame import Surface
+from pygame import K_BACKSPACE, K_ESCAPE, K_KP_ENTER, K_RETURN, Surface
 
 from src.definitions import (
     BACKGROUND,
     CELL_SIZE,
-    COLOR_42,
     FPS,
-    GUM_COLOR,
     MAX_LEVEL,
-    PACMAN_COLOR,
-    WALL_COLOR,
-    WALL_WIDTH,
-    E,
     GameState,
-    N,
-    S,
     Screen,
-    W,
 )
+from src.draw import Draw
 from src.game import Game
 
 
 class Render:
-    def __init__(self, game: Game) -> None:
+    def __init__(self, draw: Draw, game: Game) -> None:
         self.running = True
         self.game = game
+        self.name = ""
         self.screen_state = Screen.MENU
-        self.menu_options = ["Start", "Quit"]
-        self.win_options = ["Leaderboard", "Play Again", "Menu", "Quit"]
-        self.win_index = 0
-        self.menu_index = 0
-        self.font: pygame.font.Font
-        self.small_font = pygame.font.Font
-
-    def _load_sprite(self, path: str) -> Surface:
-        image = pygame.image.load(path).convert_alpha()
-        image = pygame.transform.scale(
-            image, (CELL_SIZE // 1.5, CELL_SIZE // 1.5)
-        )
-        return image
-
-    def draw_ghosts(self, screen: Surface) -> None:
-        for ghost in self.game.ghosts:
-            px: int = ghost.x * CELL_SIZE + CELL_SIZE // 2
-            py: int = ghost.y * CELL_SIZE + CELL_SIZE // 2
-
-            sprite = self._load_sprite(ghost.sprite_path)
-            rect = sprite.get_rect(center=(px, py))
-            screen.blit(sprite, rect)
-
-    def draw_pacman(self, screen: Surface, dx: int, dy: int) -> None:
-        px: int = dx * CELL_SIZE + CELL_SIZE // 2
-        py: int = dy * CELL_SIZE + CELL_SIZE // 2
-
-        sprite = self._load_sprite(self.game.pacman.sprite_path)
-        rect = sprite.get_rect(center=(px, py))
-        screen.blit(sprite, rect)
-
-    def draw_gums(self, screen: Surface) -> None:
-        for gum in self.game.pacgums:
-            left = gum[1] * CELL_SIZE
-            top = gum[0] * CELL_SIZE
-            pygame.draw.circle(
-                screen,
-                GUM_COLOR,
-                (
-                    left + CELL_SIZE // 2,
-                    top + CELL_SIZE // 2,
-                ),
-                4,
-            )
-
-    def draw_maze(self, screen: Surface) -> None:
-        maze = self.game.maze.get_maze
-        for y in range(self.game.height):
-            for x in range(self.game.width):
-                cell = maze[y][x]
-                left = x * CELL_SIZE
-                top = y * CELL_SIZE
-                right = left + CELL_SIZE
-                bottom = top + CELL_SIZE
-
-                if cell == 15:
-                    pygame.draw.rect(
-                        screen, COLOR_42, (left, top, CELL_SIZE, CELL_SIZE)
-                    )
-                    continue
-
-                if cell & N:
-                    pygame.draw.line(
-                        screen,
-                        WALL_COLOR,
-                        (left, top),
-                        (right, top),
-                        WALL_WIDTH,
-                    )
-
-                # East
-                if cell & E:
-                    pygame.draw.line(
-                        screen,
-                        WALL_COLOR,
-                        (right, top),
-                        (right, bottom),
-                        WALL_WIDTH,
-                    )
-
-                # South
-                if cell & S:
-                    pygame.draw.line(
-                        screen,
-                        WALL_COLOR,
-                        (left, bottom),
-                        (right, bottom),
-                        WALL_WIDTH,
-                    )
-
-                # West
-                if cell & W:
-                    pygame.draw.line(
-                        screen,
-                        WALL_COLOR,
-                        (left, top),
-                        (left, bottom),
-                        WALL_WIDTH,
-                    )
-
-    def draw_text(
-        self,
-        screen: Surface,
-        text: str,
-        center: tuple[int, int],
-        color: tuple[int, int, int],
-        font: pygame.font.Font | None = None,
-    ) -> None:
-        font = font or self.font
-        surface = font.render(text, True, color)
-        rect = surface.get_rect(center=center)
-        screen.blit(surface, rect)
-
-    def draw_win_screen(self, screen: Surface) -> None:
-        center_x = screen.get_width() // 2
-        center_y = screen.get_width() // 2 - 30
-
-        self.draw_text(
-            screen,
-            "Congratulations You Won!",
-            (center_x, center_y - 140),
-            WALL_COLOR,
-            self.small_font,
-        )
-        self.draw_text(
-            screen,
-            f"Your score is {self.game.score}",
-            (center_x, center_y - 100),
-            WALL_COLOR,
-            self.small_font,
-        )
-        for i, option in enumerate(self.win_options):
-            if i != self.win_index:
-                color = PACMAN_COLOR
-            else:
-                color = (255, 255, 255)
-            dist = center_y + i * 65
-            self.draw_text(screen, option, (center_x, dist), color, self.font)
-
-    def draw_menu(self, screen: Surface) -> None:
-        center_x = screen.get_width() // 2
-        center_y = screen.get_width() // 2 - 30
-
-        self.draw_text(
-            screen,
-            "PAC-MAN",
-            (center_x, center_y - 100),
-            WALL_COLOR,
-            self.font,
-        )
-
-        for i, option in enumerate(self.menu_options):
-            if i != self.menu_index:
-                color = PACMAN_COLOR
-            else:
-                color = (255, 255, 255)
-            dist = center_y + i * 65
-            self.draw_text(screen, option, (center_x, dist), color, self.font)
+        self.draw = draw
 
     def _select_menu_option(self, option: str) -> None:
         if option == "Start":
@@ -194,8 +30,10 @@ class Render:
             self.running = False
 
     def _select_win_option(self, option: str) -> None:
+        if option == "Save Score":
+            self.screen_state = Screen.SAVE
         if option == "Leaderboard":
-            pass  # TODO LEADERBOARD
+            self.screen_state = Screen.LEADERBOARD
         elif option == "Menu":
             self.game.reset_game()
             self.screen_state = Screen.MENU
@@ -227,28 +65,50 @@ class Render:
             if event.key in (pygame.K_CAPSLOCK, pygame.K_ASTERISK):
                 self.game.pacgums = []
             if self.screen_state == Screen.MENU:
-                self.menu_index = self._screen_handler(
+                self.game.menu_index = self._screen_handler(
                     event.key,
-                    self.menu_index,
-                    self.menu_options,
+                    self.game.menu_index,
+                    self.game.menu_options,
                     self._select_menu_option,
                 )
             elif self.screen_state == Screen.WON:
-                self.win_index = self._screen_handler(
+                self.game.options_index = self._screen_handler(
                     event.key,
-                    self.win_index,
-                    self.win_options,
+                    self.game.options_index,
+                    self.game.options,
                     self._select_win_option,
                 )
             elif self.screen_state == Screen.PLAYING:
                 print(event.key)
                 self.game.move_pacman(event.key)
+            elif self.screen_state == Screen.LEADERBOARD:
+                if event.key == K_ESCAPE:
+                    self.screen_state = Screen.WON
+            elif self.screen_state == Screen.SAVE:
+                self.handle_save(event)
 
-    def draw_game(self, screen: Surface) -> None:
-        self.draw_gums(screen)
-        self.draw_maze(screen)
-        self.draw_ghosts(screen)
-        self.draw_pacman(screen, self.game.pacman.x, self.game.pacman.y)
+    def _save_score(self) -> int | None:
+        db = self.game.db
+        rows = db.check_score_player(self.name)
+        if not rows:
+            db.insert_player(self.name, self.game.score)
+        elif self.game.score > rows[0][0]:
+            db.update_score(self.name, self.game.score)
+
+    def handle_save(self, event) -> None:
+        if event.key in (K_RETURN, K_KP_ENTER):
+            if not self.game.valid_player_name(self.name):
+                return
+            self._save_score()
+        elif event.key == K_BACKSPACE:
+            self.name = self.name[:-1]
+            return
+        elif event.key != K_ESCAPE:
+            if event.unicode.isalnum():
+                self.name += event.unicode.upper()
+            return
+        self.name = ""
+        self.screen_state = Screen.WON
 
     def display(self) -> None:
         screen: Surface = pygame.display.set_mode(
@@ -259,8 +119,7 @@ class Render:
             pygame.SCALED,
         )
         pygame.font.init()
-        self.font = pygame.font.Font("assets/fonts/pacman.ttf", 48)
-        self.small_font = pygame.font.Font("assets/fonts/pacman.ttf", 24)
+        self.draw.load_assets()
 
         pygame.display.set_caption("PACMAN")
         clock = pygame.time.Clock()
@@ -274,11 +133,11 @@ class Render:
             screen.fill(BACKGROUND)
 
             if self.screen_state == Screen.MENU:
-                self.draw_menu(screen)
+                self.draw.menu(screen)
             elif self.screen_state == Screen.PLAYING:
                 if self.game.state == GameState.PLAYING:
                     self.game.move_ghost(dt)
-                    self.draw_game(screen)
+                    self.draw.game_screen(screen)
                     self.game.update(dt)
                 elif self.game.state == GameState.LOST:
                     self.game.reset_game()
@@ -288,8 +147,11 @@ class Render:
                     else:
                         self.game.next_level()
             elif self.screen_state == Screen.WON:
-                self.draw_win_screen(screen)
+                self.draw.option_screen(screen)
+            elif self.screen_state == Screen.LEADERBOARD:
+                self.draw.leaderboard(screen)
+            elif self.screen_state == Screen.SAVE:
+                self.draw.save(screen, self.name)
 
             pygame.display.flip()
-
         pygame.quit()
