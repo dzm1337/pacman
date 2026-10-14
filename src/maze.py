@@ -1,7 +1,7 @@
 from mazegenerator import MazeGenerator
-from src.parser import fail
 
-from src.config import Config
+from src.definitions import DOWN, LEFT, RIGHT, UP, E, N, S, W
+from src.parser import fail
 
 
 class Maze:
@@ -15,6 +15,7 @@ class Maze:
             )
         except Exception as e:
             fail(f"maze Generator Failed: {e}")
+        self.neighbours = self.find_neighbours()
 
     @property
     def get_shape(self) -> tuple[int, int]:
@@ -58,3 +59,30 @@ class Maze:
         center_y: int = self.height // 2
 
         return self.find_nearest_open_cell(center_x, center_y)
+
+    def find_neighbours(
+        self,
+    ) -> dict[tuple[int, int], list[tuple[int, int]]]:
+        neighbours: dict[tuple[int, int], list[tuple[int, int]]] = {
+            (x, y): [] for y in range(self.height) for x in range(self.width)
+        }
+        maze = self.get_maze
+
+        for y in range(len(maze)):
+            for x in range(len(maze[y])):
+                if not maze[y][x] & N:
+                    dx, dy = UP
+                    neighbours[(x, y)].append((x + dx, y + dy))
+
+                if not maze[y][x] & S:
+                    dx, dy = DOWN
+                    neighbours[(x, y)].append((x + dx, y + dy))
+
+                if not maze[y][x] & W:
+                    dx, dy = LEFT
+                    neighbours[(x, y)].append((x + dx, y + dy))
+
+                if not maze[y][x] & E:
+                    dx, dy = RIGHT
+                    neighbours[(x, y)].append((x + dx, y + dy))
+        return neighbours

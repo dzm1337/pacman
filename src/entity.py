@@ -1,7 +1,6 @@
 from src.config import Config
 from src.definitions import WALLS
 from src.maze import Maze
-from src.definitions import UP, DOWN, LEFT, RIGHT, STILL
 
 
 class Entity:
@@ -23,8 +22,9 @@ class Entity:
         self.spawn_pos = x, y
         self.vel = 5
         self.sprite_path = sprite_path
+        self.prev = 0, 0
 
-    def able_to_move(self, direction) -> bool:
+    def able_to_move(self, direction: tuple[int, int]) -> bool:
         """
         Takes the cell position and compare with the
         moviment to verify if the entity is able to move
@@ -32,7 +32,7 @@ class Entity:
         dx, dy = direction
         wall = WALLS[(dx, dy)]
         return not (self.maze.get_maze[self.y][self.x] & wall)
-    
+
     def tick(self, dt: float) -> bool:
         """
         Count the elapsed time and return True if the
@@ -51,9 +51,9 @@ class Entity:
         # print("Walk")
         return True
 
-    def move(self, direction) -> None:
-        print(f"DIRECTION: {direction}")
+    def move(self, direction: tuple[int, int]) -> None:
         dx, dy = direction
         if direction != (0, 0) and self.able_to_move(direction):
             self.x += dx
             self.y += dy
+            self.prev = self.x - dx, self.y - dy

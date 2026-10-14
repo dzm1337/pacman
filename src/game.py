@@ -1,6 +1,7 @@
 import random
 
 from src.config import Config
+from src.database import Database
 from src.definitions import (
     BLINKY_COLOR,
     CLYDE_COLOR,
@@ -17,13 +18,31 @@ from src.pacman import Pacman
 
 class Game:
     def __init__(self, config: Config) -> None:
+        self.db = Database()
+        self.db.initialize_database()
         self.config = config
         self.score = 0
         self.level = 1
         self.state = GameState.PLAYING
         self.lives = self.config.lives
         self.time_left = config.level_max_time
+        self.menu_options = [
+            "Start",
+            "Leaderboard",
+            "Quit",
+        ]
+        self.options = [
+            "Save Score",
+            "Play Again",
+            "Menu",
+            "Quit",
+        ]
+        self.options_index = 0
+        self.menu_index = 0
         self._setup_level()
+
+    def valid_player_name(self, name: str) -> bool:
+        return name.isalnum() and len(name) <= 12
 
     @property
     def is_level_won(self) -> bool:
@@ -46,7 +65,6 @@ class Game:
         self.time_left = self.config.level_max_time
         self.width, self.height = self._level_size()
         self.maze = Maze(self.width, self.height, self._level_seed())
-
         self.ghosts = [
             Inky(
                 self.maze,
@@ -113,7 +131,9 @@ class Game:
         for ghost in self.ghosts:
             ghost_pos = ghost.x, ghost.y
             pacman_pos = self.pacman.x, self.pacman.y
-            if pacman_pos == ghost_pos:
+            if pacman_pos == ghost_pos or (
+                self.pacman.prev == ghost_pos and ghost.prev == pacman_pos
+            ):
                 self.lives -= 1
                 self._reset_positions()
 
@@ -128,7 +148,8 @@ class Game:
     def move_ghost(self, dt: float) -> None:
         for ghost in self.ghosts:
             if ghost.tick(dt):
-                ghost.move()
+                ghost.direction = ghost.get_dir(self.pacman)
+                ghost.move(ghost.direction)
 
     def _decide_state(self) -> None:
         if self.is_level_won:

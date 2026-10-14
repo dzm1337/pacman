@@ -1,12 +1,12 @@
 import random
 from abc import ABC
+from collections import deque
 
 from src.config import Config
-
-# from src.game import Game
-from src.definitions import DOWN, LEFT, RIGHT, UP
+from src.definitions import DOWN, LEFT, RIGHT, STILL, UP
 from src.entity import Entity
 from src.maze import Maze
+from src.pacman import Pacman
 
 
 class Ghost(Entity, ABC):
@@ -19,76 +19,71 @@ class Ghost(Entity, ABC):
         color: tuple[int, int, int],
         sprite_path: str,
     ) -> None:
-        self.last_move = None
-
         super().__init__(
             maze, config, x, y, color=color, sprite_path=sprite_path
         )
 
-    # @abstractmethod 0, 0 just for tests
-    def target(self):
-        return 0, 0
-
     # Change the state of the Ghost, chase / scatter / frightened / eaten
-    def change_state(self): ...
+    def change_state(self) -> None: ...
 
-    def move(self) -> None:
-        direction = self.get_dir()
-        self.last_move = direction
-        dx, dy = direction
-        self.x += dx
-        self.y += dy
+    def _bfs(self, entry: tuple[int, int]) -> dict[tuple[int, int], int]:
+        """Return the distance from `entry` to every reachable cell."""
+        distances = {entry: 0}
+        q: deque[tuple[int, int]] = deque([entry])
+        while q:
+            curr = q.popleft()
+            for x in self.maze.neighbours[curr]:
+                if x not in distances:
+                    q.append(x)
+                    distances[x] = distances[curr] + 1
+        return distances
+
+    def _chase(self, target: tuple[int, int]) -> tuple[int, int] | None:
+        """Return the neighbour cell closest to `target`, if any."""
+        here = (self.x, self.y)
+        if here == target:
+            return None
+
+        distances = self._bfs(target)
+        options = [c for c in self.maze.neighbours[here] if c in distances]
+        if not options:
+            return None
+
+        return min(options, key=lambda c: distances[c])
+
+    def get_dir(self, pacman: Pacman) -> tuple[int, int]:
+        """Return the direction the ghost will take on its next step."""
+        return self.random_move()
+
+    def random_move(self) -> tuple[int, int]:
+        """Keep going straight, pick a random open direction when blocked."""
+        if self.direction != STILL and self.able_to_move(self.direction):
+            return self.direction
+
+        directions = [UP, DOWN, LEFT, RIGHT]
+        valid_dir = [dir for dir in directions if self.able_to_move(dir)]
+        if not valid_dir:
+            return STILL
+        return random.choice(valid_dir)
 
 
-# The Inky will have a random moviment behaviour.
 class Inky(Ghost):
-    def get_dir(self) -> str:
-        if self.last_move is not None:
-            if self.able_to_move(self.last_move):
-                return self.last_move
-
-        directions = [UP, DOWN, LEFT, RIGHT]
-        valid_dir = [dir for dir in directions if self.able_to_move(dir)]
-        choice = random.choice(valid_dir)
-        return choice
+    """Random (uses Ghost.random_move)."""
 
 
-# This one will target 4 spaces ahead of where the pac-man is located.
 class Pinky(Ghost):
-    def get_dir(self) -> str:
-
-        if self.last_move is not None:
-            if self.able_to_move(self.last_move):
-                return self.last_move
-
-        directions = [UP, DOWN, LEFT, RIGHT]
-        valid_dir = [dir for dir in directions if self.able_to_move(dir)]
-        choice = random.choice(valid_dir)
-        return choice
+    """Random (uses Ghost.random_move)."""
 
 
-# The Clyde will target 8 spaces ahead of the pac-man.
 class Clyde(Ghost):
-    def get_dir(self) -> str:
-        if self.last_move is not None:
-            if self.able_to_move(self.last_move):
-                return self.last_move
-
-        directions = [UP, DOWN, LEFT, RIGHT]
-        valid_dir = [dir for dir in directions if self.able_to_move(dir)]
-        choice = random.choice(valid_dir)
-        return choice
+    """Random (uses Ghost.random_move)."""
 
 
-# This one will follow the pac-man directly where he is located.
 class Blinky(Ghost):
-    def get_dir(self) -> str:
+    """Chase the pac-man directly, following the shortest path to him."""
 
-        if self.last_move is not None:
-            if self.able_to_move(self.last_move):
-                return self.last_move
-
-        directions = [UP, DOWN, LEFT, RIGHT]
-        valid_dir = [dir for dir in directions if self.able_to_move(dir)]
-        choice = random.choice(valid_dir)
-        return choice
+    def get_dir(self, pacman: Pacman) -> tuple[int, int]:
+        next_coord = self._chase((pacman.x, pacman.y))
+        if next_coord is None:
+            return STILL
+        return next_coord[0] - self.x, next_coord[1] - self.y
