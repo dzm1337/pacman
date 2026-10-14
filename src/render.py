@@ -26,20 +26,8 @@ class Render:
     def _select_menu_option(self, option: str) -> None:
         if option == "Start":
             self.screen_state = Screen.PLAYING
-        elif option == "Quit":
-            self.running = False
-
-    def _select_win_option(self, option: str) -> None:
-        if option == "Save Score":
-            self.screen_state = Screen.SAVE
         if option == "Leaderboard":
             self.screen_state = Screen.LEADERBOARD
-        elif option == "Menu":
-            self.game.reset_game()
-            self.screen_state = Screen.MENU
-        elif option == "Play Again":
-            self.game.reset_game()
-            self.screen_state = Screen.PLAYING
         elif option == "Quit":
             self.running = False
 
@@ -71,19 +59,17 @@ class Render:
                     self.game.menu_options,
                     self._select_menu_option,
                 )
-            elif self.screen_state == Screen.WON:
-                self.game.options_index = self._screen_handler(
-                    event.key,
-                    self.game.options_index,
-                    self.game.options,
-                    self._select_win_option,
-                )
             elif self.screen_state == Screen.PLAYING:
-                print(event.key)
                 self.game.move_pacman(event.key)
+            elif self.screen_state == Screen.WON:
+                if event.key in (K_KP_ENTER, K_RETURN):
+                    self.screen_state = Screen.SAVE
+            elif self.screen_state == Screen.GAME_OVER:
+                if event.key in (K_KP_ENTER, K_RETURN):
+                    self.screen_state = Screen.SAVE
             elif self.screen_state == Screen.LEADERBOARD:
                 if event.key == K_ESCAPE:
-                    self.screen_state = Screen.WON
+                    self.screen_state = Screen.MENU
             elif self.screen_state == Screen.SAVE:
                 self.handle_save(event)
 
@@ -108,7 +94,7 @@ class Render:
                 self.name += event.unicode.upper()
             return
         self.name = ""
-        self.screen_state = Screen.WON
+        self.screen_state = Screen.MENU
 
     def display(self) -> None:
         screen: Surface = pygame.display.set_mode(
@@ -133,25 +119,28 @@ class Render:
             screen.fill(BACKGROUND)
 
             if self.screen_state == Screen.MENU:
+                self.game.reset_game()
                 self.draw.menu(screen)
             elif self.screen_state == Screen.PLAYING:
                 if self.game.state == GameState.PLAYING:
+                    self.game.update(dt)
                     self.game.move_ghost(dt)
                     self.draw.game_screen(screen)
-                    self.game.update(dt)
                 elif self.game.state == GameState.LOST:
-                    self.game.reset_game()
+                    self.screen_state = Screen.GAME_OVER
                 elif self.game.state == GameState.WON:
                     if self.game.level == MAX_LEVEL:
                         self.screen_state = Screen.WON
                     else:
                         self.game.next_level()
             elif self.screen_state == Screen.WON:
-                self.draw.option_screen(screen)
+                self.draw.victory(screen)
             elif self.screen_state == Screen.LEADERBOARD:
                 self.draw.leaderboard(screen)
             elif self.screen_state == Screen.SAVE:
                 self.draw.save(screen, self.name)
+            elif self.screen_state == Screen.GAME_OVER:
+                self.draw.game_over(screen)
 
             pygame.display.flip()
         pygame.quit()

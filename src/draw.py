@@ -2,6 +2,7 @@ import pygame
 from pygame import Surface
 
 from src.definitions import (
+    BLINKY_COLOR,
     CELL_SIZE,
     COLOR_42,
     GUM_COLOR,
@@ -19,6 +20,8 @@ from src.game import Game
 FONT_PATH = "assets/fonts/pacman.ttf"
 OPTION_SPACING = 65
 MENU_SPRITE_SIZE = 36
+TABLE_MARGIN = 30
+TABLE_GAP = 20
 MENU_GHOSTS = ("blinky", "pinky", "inky", "clyde")
 
 
@@ -33,6 +36,10 @@ class Draw:
         self.font = pygame.font.Font(FONT_PATH, 48)
         self.medium_font = pygame.font.Font(FONT_PATH, 32)
         self.small_font = pygame.font.Font(FONT_PATH, 24)
+        # From biggest to smallest, the leaderboard uses the first that fits
+        self.table_fonts = [
+            pygame.font.Font(FONT_PATH, size) for size in (24, 20, 16)
+        ]
         self.menu_pacman = self._load_sprite(
             "assets/pacman.png", MENU_SPRITE_SIZE
         )
@@ -175,14 +182,18 @@ class Draw:
         return top_y
 
     def _title(
-        self, screen: Surface, text: str, center: tuple[int, int]
+        self,
+        screen: Surface,
+        text: str,
+        center: tuple[int, int],
+        color: tuple[int, int, int] = PACMAN_COLOR,
     ) -> None:
         """
-        Draw a big yellow title with a blue shadow, arcade style
+        Draw a big title with a blue shadow, arcade style
         """
         x, y = center
         self.text(screen, text, (x + 4, y + 4), WALL_COLOR, self.title_font)
-        self.text(screen, text, (x, y), PACMAN_COLOR, self.title_font)
+        self.text(screen, text, (x, y), color, self.title_font)
 
     def _footer(self, screen: Surface) -> None:
         self.text(
@@ -220,6 +231,51 @@ class Draw:
         )
         self._footer(screen)
 
+    def victory(self, screen: Surface) -> None:
+        """
+        Draw the end screen telling the player they won
+        """
+        self._end_screen(screen, "YOU WON!", PACMAN_COLOR)
+
+    def game_over(self, screen: Surface) -> None:
+        """
+        Draw the end screen telling the player they lost
+        """
+        self._end_screen(screen, "GAME OVER", BLINKY_COLOR)
+
+    def _end_screen(
+        self, screen: Surface, title: str, color: tuple[int, int, int]
+    ) -> None:
+        """
+        Draw an end of game screen with a title and the final score
+        """
+        center_x = screen.get_width() // 2
+        center_y = screen.get_height() // 2
+
+        self._title(screen, title, (center_x, center_y - 110), color)
+        self._ghost_row(screen, center_x, center_y - 40)
+        self.text(
+            screen,
+            "FINAL SCORE",
+            (center_x, center_y + 30),
+            COLOR_42,
+            self.small_font,
+        )
+        self.text(
+            screen,
+            str(self.game.score),
+            (center_x, center_y + 75),
+            WHITE,
+            self.font,
+        )
+        self.text(
+            screen,
+            "Press ENTER to continue",
+            (center_x, screen.get_height() - 30),
+            COLOR_42,
+            self.small_font,
+        )
+
     def game_screen(self, screen: Surface) -> None:
         self.gums(screen)
         self.maze(screen)
@@ -245,56 +301,73 @@ class Draw:
             self.small_font,
         )
 
+    def _table_font(
+        self, scores: list[tuple], max_width: int
+    ) -> pygame.font.Font:
+        """
+        Pick the biggest font where rank, name and score fit in max_width
+        """
+        for font in self.table_fonts:
+            rank_w = font.size(f"{len(scores)}.")[0]
+            name_w = max(font.size(name)[0] for name, _ in scores)
+            score_w = max(font.size(str(score))[0] for _, score in scores)
+            if rank_w + name_w + score_w + 2 * TABLE_GAP <= max_width:
+                return font
+        return self.table_fonts[-1]
+
     def leaderboard(self, screen: Surface) -> None:
         width = screen.get_width()
-        left_x = width // 4
-        right_x = width * 3 // 4
         center_x = width // 2
-        top_y = screen.get_height() // 2 - 100
+        title_y = 50
         scores = self.game.db.top_scores()
 
+        self.text(
+            screen,
+            "LEADERBOARD",
+            (center_x, title_y),
+            PACMAN_COLOR,
+            self.medium_font,
+        )
+
         if scores:
+            font = self._table_font(scores, width - 2 * TABLE_MARGIN)
+            rank_x = TABLE_MARGIN + font.size(f"{len(scores)}.")[0]
+            name_x = rank_x + TABLE_GAP
+            score_x = width - TABLE_MARGIN
+            row_h = font.get_height() + 12
+            top_y = title_y + 70
+
             for i, (name, score) in enumerate(scores):
-                y = top_y + i * 65
-                self.text(
-                    screen,
-                    f"{i + 1}. {name}",
-                    (left_x, y),
-                    PACMAN_COLOR,
-                    self.small_font,
-                    anchor="midleft",
-                )
-                self.text(
-                    screen,
-                    str(score),
-                    (right_x, y),
-                    WHITE,
-                    self.small_font,
-                    anchor="midright",
-                )
-            bottom_y = top_y + len(scores) * 65
+                y = top_y + i * row_h
+                color = WHITE if i == 0 else PACMAN_COLOR
+                self.text(screen, f"{i + 1}.", (rank_x, y), COLOR_42,
+                          font, anchor="midright")
+                self.text(screen, name, (name_x, y), color,
+                          font, anchor="midleft")
+                self.text(screen, str(score), (score_x, y), WHITE,
+                          font, anchor="midright")
         else:
+            center_y = screen.get_height() // 2
             self.text(
                 screen,
                 "There is no score",
-                (center_x, top_y + 80),
+                (center_x, center_y - 20),
                 PACMAN_COLOR,
                 self.small_font,
             )
             self.text(
                 screen,
                 "registered!",
-                (center_x, top_y + 115),
+                (center_x, center_y + 15),
                 PACMAN_COLOR,
                 self.small_font,
             )
-            bottom_y = top_y + 150
 
         self.text(
             screen,
-            "Press ESC to leave",
-            (center_x, bottom_y),
-            PACMAN_COLOR,
+            "ESC to leave",
+            (center_x, screen.get_height() - 30),
+            COLOR_42,
             self.small_font,
         )
 
