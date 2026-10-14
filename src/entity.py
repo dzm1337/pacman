@@ -29,6 +29,7 @@ class Entity:
         Takes the cell position and compare with the
         moviment to verify if the entity is able to move
         """
+        print(direction)
         dx, dy = direction
         wall = WALLS[(dx, dy)]
         return not (self.maze.get_maze[self.y][self.x] & wall)
@@ -52,7 +53,6 @@ class Entity:
         return True
 
     def move(self, direction) -> None:
-        print(f"DIRECTION: {direction}")
         dx, dy = direction
         if direction != (0, 0) and self.able_to_move(direction):
             self.x += dx

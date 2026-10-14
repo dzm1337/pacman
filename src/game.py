@@ -128,7 +128,7 @@ class Game:
     def move_ghost(self, dt: float) -> None:
         for ghost in self.ghosts:
             if ghost.tick(dt):
-                ghost.move()
+                ghost.move(self.pacman)
 
     def _decide_state(self) -> None:
         if self.is_level_won:
