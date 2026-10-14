@@ -26,9 +26,12 @@ class Game:
         self.state = GameState.PLAYING
         self.lives = self.config.lives
         self.time_left = config.level_max_time
-        self.menu_options = ["Start", "Quit"]
-        self.options = [
+        self.menu_options = [
+            "Start",
             "Leaderboard",
+            "Quit",
+        ]
+        self.options = [
             "Save Score",
             "Play Again",
             "Menu",
@@ -62,7 +65,6 @@ class Game:
         self.time_left = self.config.level_max_time
         self.width, self.height = self._level_size()
         self.maze = Maze(self.width, self.height, self._level_seed())
-
         self.ghosts = [
             Inky(
                 self.maze,
@@ -126,10 +128,12 @@ class Game:
             ghost.x, ghost.y = ghost.spawn_pos
 
     def _check_collision(self) -> None:
-        for ghost in self.ghosts:
+        for i, ghost in enumerate(self.ghosts):
             ghost_pos = ghost.x, ghost.y
             pacman_pos = self.pacman.x, self.pacman.y
-            if pacman_pos == ghost_pos:
+            if pacman_pos == ghost_pos or (
+                self.pacman.prev == ghost_pos and ghost.prev == pacman_pos
+            ):
                 self.lives -= 1
                 self._reset_positions()
 
@@ -144,7 +148,8 @@ class Game:
     def move_ghost(self, dt: float) -> None:
         for ghost in self.ghosts:
             if ghost.tick(dt):
-                ghost.move()
+                ghost.direction = ghost.get_dir()
+                ghost.move(ghost.direction)
 
     def _decide_state(self) -> None:
         if self.is_level_won:
