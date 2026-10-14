@@ -24,7 +24,7 @@ class Entity:
         self.sprite_path = sprite_path
         self.prev = 0, 0
 
-    def able_to_move(self, direction) -> bool:
+    def able_to_move(self, direction: tuple[int, int]) -> bool:
         """
         Takes the cell position and compare with the
         moviment to verify if the entity is able to move
@@ -51,7 +51,7 @@ class Entity:
         # print("Walk")
         return True
 
-    def move(self, direction) -> None:
+    def move(self, direction: tuple[int, int]) -> None:
         dx, dy = direction
         if direction != (0, 0) and self.able_to_move(direction):
             self.x += dx

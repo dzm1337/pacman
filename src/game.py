@@ -128,7 +128,7 @@ class Game:
             ghost.x, ghost.y = ghost.spawn_pos
 
     def _check_collision(self) -> None:
-        for i, ghost in enumerate(self.ghosts):
+        for ghost in self.ghosts:
             ghost_pos = ghost.x, ghost.y
             pacman_pos = self.pacman.x, self.pacman.y
             if pacman_pos == ghost_pos or (
@@ -148,7 +148,7 @@ class Game:
     def move_ghost(self, dt: float) -> None:
         for ghost in self.ghosts:
             if ghost.tick(dt):
-                ghost.direction = ghost.get_dir()
+                ghost.direction = ghost.get_dir(self.pacman)
                 ghost.move(ghost.direction)
 
     def _decide_state(self) -> None:
