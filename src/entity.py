@@ -12,6 +12,7 @@ class Entity:
         y: int,
         color: tuple[int, int, int],
         sprite_path: str,
+        vel: int
     ) -> None:
         self.color = color
         self.maze = maze
@@ -20,7 +21,7 @@ class Entity:
         self.direction = 0, 0
         self.x, self.y = x, y
         self.spawn_pos = x, y
-        self.vel = 5
+        self.vel = vel
         self.sprite_path = sprite_path
         self.prev = 0, 0
 
@@ -50,6 +51,11 @@ class Entity:
         self.move_timer -= 1 / self.vel
         # print("Walk")
         return True
+
+    def render_pos(self) -> tuple[float, float]:
+        t = min(self.move_timer * self.vel, 1.0)
+        px, py = self.prev
+        return px + (self.x - px) * t, py + (self.y - py) * t
 
     def move(self, direction: tuple[int, int]) -> None:
         dx, dy = direction

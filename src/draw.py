@@ -55,8 +55,9 @@ class Draw:
 
     def ghosts(self, screen: Surface) -> None:
         for ghost in self.game.ghosts:
-            px: int = ghost.x * CELL_SIZE + CELL_SIZE // 2
-            py: int = ghost.y * CELL_SIZE + CELL_SIZE // 2
+            gx, gy = ghost.render_pos()
+            px: int = int(gx * CELL_SIZE + CELL_SIZE // 2)
+            py: int = int(gy * CELL_SIZE + CELL_SIZE // 2)
 
             sprite = self._load_sprite(ghost.sprite_path)
             rect = sprite.get_rect(center=(px, py))

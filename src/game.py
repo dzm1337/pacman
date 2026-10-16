@@ -72,6 +72,7 @@ class Game:
                 *self.maze.find_nearest_open_cell(0, 0),
                 color=INKY_COLOR,
                 sprite_path="assets/inky.png",
+                vel=2.7,
             ),
             Pinky(
                 self.maze,
@@ -79,6 +80,7 @@ class Game:
                 *self.maze.find_nearest_open_cell(self.width - 1, 0),
                 color=PINKY_COLOR,
                 sprite_path="assets/pinky.png",
+                vel=2.5,
             ),
             Clyde(
                 self.maze,
@@ -86,6 +88,7 @@ class Game:
                 *self.maze.find_nearest_open_cell(0, self.height - 1),
                 color=CLYDE_COLOR,
                 sprite_path="assets/clyde.png",
+                vel=2.5,
             ),
             Blinky(
                 self.maze,
@@ -95,11 +98,12 @@ class Game:
                 ),
                 color=BLINKY_COLOR,
                 sprite_path="assets/blinky.png",
+                vel=2.2,
             ),
         ]
 
         self.pacman = Pacman(
-            self.maze, self.config, PACMAN_COLOR, "assets/pacman.png"
+            self.maze, self.config, PACMAN_COLOR, "assets/pacman.png", 4
         )
 
         self.pacgums: set[tuple[int, int]] = {
