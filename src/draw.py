@@ -1,3 +1,5 @@
+from math import ceil
+
 import pygame
 from pygame import Surface
 
@@ -5,8 +7,14 @@ from src.definitions import (
     BLINKY_COLOR,
     CELL_SIZE,
     COLOR_42,
+    DOWN,
     GUM_COLOR,
+    HUD_HEIGHT,
+    LEFT,
     PACMAN_COLOR,
+    RIGHT,
+    STILL,
+    UP,
     WALL_COLOR,
     WALL_WIDTH,
     WHITE,
@@ -23,6 +31,7 @@ MENU_SPRITE_SIZE = 36
 TABLE_MARGIN = 30
 TABLE_GAP = 20
 MENU_GHOSTS = ("blinky", "pinky", "inky", "clyde")
+HUD_GAP = 8
 
 
 class Draw:
@@ -36,39 +45,61 @@ class Draw:
         self.font = pygame.font.Font(FONT_PATH, 48)
         self.medium_font = pygame.font.Font(FONT_PATH, 32)
         self.small_font = pygame.font.Font(FONT_PATH, 24)
+        # From biggest to smallest, the HUD uses the first that fits
+        self.hud_fonts = [
+            pygame.font.Font(FONT_PATH, size) for size in (16, 8)
+        ]
         # From biggest to smallest, the leaderboard uses the first that fits
         self.table_fonts = [
-            pygame.font.Font(FONT_PATH, size) for size in (24, 20, 16)
+            pygame.font.Font(FONT_PATH, size) for size in (24, 16, 8)
         ]
-        self.menu_pacman = self._load_sprite(
-            "assets/pacman.png", MENU_SPRITE_SIZE
-        )
+        self.menu_pacman = self._load_sprite("assets/menu/pacman.png")
         self.menu_ghosts = [
-            self._load_sprite(f"assets/{name}.png", MENU_SPRITE_SIZE)
+            self._load_sprite(f"assets/menu/{name}.png")
             for name in MENU_GHOSTS
         ]
+        self.playing_ghost = [
+            self._load_sprite(ghost.sprite_path) for ghost in self.game.ghosts
+        ]
+        self.current_pacman_sprite = self._load_sprite(
+            self.game.pacman.sprite_path
+        )
+        self.pacman_down = self._load_sprite("assets/game/pacman_down.png")
+        self.pacman_right = self._load_sprite("assets/game/pacman_right.png")
+        self.pacman_left = self._load_sprite("assets/game/pacman_left.png")
+        self.pacman_up = self._load_sprite("assets/game/pacman_up.png")
+        self.pacman_directions = {
+            UP: self.pacman_up,
+            DOWN: self.pacman_down,
+            LEFT: self.pacman_left,
+            RIGHT: self.pacman_right,
+            STILL: self.pacman_right,
+        }
 
-    def _load_sprite(self, path: str, size: int = CELL_SIZE // 1.5) -> Surface:
+    def _load_sprite(self, path: str) -> Surface:
         image = pygame.image.load(path).convert_alpha()
-        image = pygame.transform.scale(image, (size, size))
         return image
 
     def ghosts(self, screen: Surface) -> None:
-        for ghost in self.game.ghosts:
-            px: int = ghost.x * CELL_SIZE + CELL_SIZE // 2
-            py: int = ghost.y * CELL_SIZE + CELL_SIZE // 2
+        for i, ghost in enumerate(self.game.ghosts):
+            gx, gy = ghost.render_pos()
+            px: int = int(gx * CELL_SIZE + CELL_SIZE // 2)
+            py: int = int(gy * CELL_SIZE + CELL_SIZE // 2)
 
-            sprite = self._load_sprite(ghost.sprite_path)
-            rect = sprite.get_rect(center=(px, py))
-            screen.blit(sprite, rect)
+            rect = self.playing_ghost[i].get_rect(center=(px, py))
+            screen.blit(self.playing_ghost[i], rect)
 
     def pacman(self, screen: Surface, dx: int, dy: int) -> None:
-        px: int = dx * CELL_SIZE + CELL_SIZE // 2
-        py: int = dy * CELL_SIZE + CELL_SIZE // 2
+        if self.game.pacman.direction in self.pacman_directions:
+            self.current_pacman_sprite = self.pacman_directions[
+                self.game.pacman.direction
+            ]
 
-        sprite = self._load_sprite(self.game.pacman.sprite_path)
-        rect = sprite.get_rect(center=(px, py))
-        screen.blit(sprite, rect)
+        gx, gy = self.game.pacman.render_pos()
+        px: int = int(gx * CELL_SIZE + CELL_SIZE // 2)
+        py: int = int(gy * CELL_SIZE + CELL_SIZE // 2)
+        rect = self.current_pacman_sprite.get_rect(center=(px, py))
+        screen.blit(self.current_pacman_sprite, rect)
 
     def gums(self, screen: Surface) -> None:
         for gum in self.game.pacgums:
@@ -149,7 +180,8 @@ class Draw:
         anchor: str = "center",
     ) -> None:
         font = font or self.font
-        surface = font.render(text, True, color)
+        # The font is pixel art, antialiasing only blurs its edges
+        surface = font.render(text, False, color)
         rect = surface.get_rect(**{anchor: pos})
         screen.blit(surface, rect)
 
@@ -277,10 +309,63 @@ class Draw:
         )
 
     def game_screen(self, screen: Surface) -> None:
-        self.gums(screen)
-        self.maze(screen)
-        self.ghosts(screen)
-        self.pacman(screen, self.game.pacman.x, self.game.pacman.y)
+        self.hud(screen)
+        # The maze is drawn below the HUD, in its own area of the screen
+        width, height = screen.get_size()
+        board = screen.subsurface((0, HUD_HEIGHT, width, height - HUD_HEIGHT))
+        self.maze(board)
+        self.gums(board)
+        self.ghosts(board)
+        self.pacman(board, self.game.pacman.x, self.game.pacman.y)
+
+    def hud(self, screen: Surface) -> None:
+        """
+        Draw the bar above the maze with score, level, time and lives
+        """
+        y = HUD_HEIGHT // 2
+        time_left = max(0, ceil(self.game.time_left))
+        time_color = BLINKY_COLOR if time_left <= 10 else WHITE
+        items = (
+            ("SCORE", str(self.game.score), WHITE),
+            ("LEVEL", str(self.game.level), WHITE),
+            ("TIME", str(time_left), time_color),
+        )
+        lives = f"x{self.game.lives}"
+        icon_w = self.pacman_right.get_width()
+
+        for font in self.hud_fonts:
+            widths = [
+                font.size(f"{label} {value}")[0] for label, value, _ in items
+            ]
+            lives_w = icon_w + HUD_GAP + font.size(lives)[0]
+            free = screen.get_width() - 2 * HUD_GAP - sum(widths) - lives_w
+            if free >= len(items) * HUD_GAP:
+                break
+
+        # Spread the items over the width, same space between each one
+        space = max(HUD_GAP, free // len(items))
+        left = HUD_GAP
+        for (label, value, color), width in zip(items, widths):
+            self.text(
+                screen, label, (left, y), COLOR_42, font, anchor="midleft"
+            )
+            value_x = left + font.size(f"{label} ")[0]
+            self.text(
+                screen, value, (value_x, y), color, font, anchor="midleft"
+            )
+            left += width + space
+
+        # Lives: pacman icon followed by the counter
+        icon = self.pacman_right.get_rect(midleft=(left, y))
+        screen.blit(self.pacman_right, icon)
+        self.text(
+            screen,
+            lives,
+            (left + icon_w + HUD_GAP, y),
+            WHITE,
+            font,
+            anchor="midleft",
+        )
 
     def save(self, screen: Surface, name: str) -> None:
         center_x = screen.get_width() // 2
@@ -340,12 +425,25 @@ class Draw:
             for i, (name, score) in enumerate(scores):
                 y = top_y + i * row_h
                 color = WHITE if i == 0 else PACMAN_COLOR
-                self.text(screen, f"{i + 1}.", (rank_x, y), COLOR_42,
-                          font, anchor="midright")
-                self.text(screen, name, (name_x, y), color,
-                          font, anchor="midleft")
-                self.text(screen, str(score), (score_x, y), WHITE,
-                          font, anchor="midright")
+                self.text(
+                    screen,
+                    f"{i + 1}.",
+                    (rank_x, y),
+                    COLOR_42,
+                    font,
+                    anchor="midright",
+                )
+                self.text(
+                    screen, name, (name_x, y), color, font, anchor="midleft"
+                )
+                self.text(
+                    screen,
+                    str(score),
+                    (score_x, y),
+                    WHITE,
+                    font,
+                    anchor="midright",
+                )
         else:
             center_y = screen.get_height() // 2
             self.text(

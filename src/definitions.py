@@ -3,8 +3,9 @@ from enum import Enum, auto
 import pygame
 
 N, E, S, W = 1, 2, 4, 8
-CELL_SIZE = 40
+CELL_SIZE = 56
 WALL_WIDTH = 10
+HUD_HEIGHT = 28
 BACKGROUND = (0, 0, 0)
 WALL_COLOR = (30, 100, 255)
 GUM_COLOR = (255, 220, 100)

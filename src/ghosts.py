@@ -18,9 +18,10 @@ class Ghost(Entity, ABC):
         y: int,
         color: tuple[int, int, int],
         sprite_path: str,
+        vel: int,
     ) -> None:
         super().__init__(
-            maze, config, x, y, color=color, sprite_path=sprite_path
+            maze, config, x, y, color=color, sprite_path=sprite_path, vel=vel
         )
 
     # Change the state of the Ghost, chase / scatter / frightened / eaten
@@ -66,17 +67,49 @@ class Ghost(Entity, ABC):
             return STILL
         return random.choice(valid_dir)
 
+    def find_target(self, pacman: Pacman, tiles_away: int) -> tuple[int, int]:
+        """Compute a valid coord 4 or 8 tiles away from the ghost's position."""
+        px, py = pacman.x, pacman.y
+        distances = self._bfs((px, py))
+        for key, value in distances.items():
+            if tiles_away == 4 and value == 4:
+                return key
+            if tiles_away == 8 and value == 8:
+                return key
+        return None
+
 
 class Inky(Ghost):
     """Random (uses Ghost.random_move)."""
 
-
+# This one will target 4 spaces ahead of where the pac-man is located.
 class Pinky(Ghost):
     """Random (uses Ghost.random_move)."""
+    def get_dir(self, pacman: Pacman) -> tuple[int, int]:
+        target = self.find_target(pacman, 4)
+        if target is None:
+            return STILL
+        next_coord = self._chase(target)
+        if next_coord is None:
+            return STILL
+        return next_coord[0] - self.x, next_coord[1] - self.y
+
+   
+        
 
 
+# The Clyde will target 8 spaces ahead of the pac-man.
 class Clyde(Ghost):
     """Random (uses Ghost.random_move)."""
+    def get_dir(self, pacman: Pacman) -> tuple[int, int]:
+        target = self.find_target(pacman, 8)
+        if target is None:
+            return STILL
+        next_coord = self._chase(target)
+        if next_coord is None:
+            return STILL
+        return next_coord[0] - self.x, next_coord[1] - self.y
+
 
 
 class Blinky(Ghost):
@@ -87,3 +120,4 @@ class Blinky(Ghost):
         if next_coord is None:
             return STILL
         return next_coord[0] - self.x, next_coord[1] - self.y
+

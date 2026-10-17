@@ -71,21 +71,24 @@ class Game:
                 self.config,
                 *self.maze.find_nearest_open_cell(0, 0),
                 color=INKY_COLOR,
-                sprite_path="assets/inky.png",
+                sprite_path="assets/game/inky.png",
+                vel=2.7,
             ),
             Pinky(
                 self.maze,
                 self.config,
                 *self.maze.find_nearest_open_cell(self.width - 1, 0),
                 color=PINKY_COLOR,
-                sprite_path="assets/pinky.png",
+                sprite_path="assets/game/pinky.png",
+                vel=2.5,
             ),
             Clyde(
                 self.maze,
                 self.config,
                 *self.maze.find_nearest_open_cell(0, self.height - 1),
                 color=CLYDE_COLOR,
-                sprite_path="assets/clyde.png",
+                sprite_path="assets/game/clyde.png",
+                vel=2.5,
             ),
             Blinky(
                 self.maze,
@@ -94,12 +97,13 @@ class Game:
                     self.width - 1, self.height - 1
                 ),
                 color=BLINKY_COLOR,
-                sprite_path="assets/blinky.png",
+                sprite_path="assets/game/blinky.png",
+                vel=2.2,
             ),
         ]
 
         self.pacman = Pacman(
-            self.maze, self.config, PACMAN_COLOR, "assets/pacman.png"
+            self.maze, self.config, PACMAN_COLOR, "assets/game/pacman.png", 4
         )
 
         self.pacgums: set[tuple[int, int]] = {
@@ -121,11 +125,11 @@ class Game:
         self.lives = self.config.lives
         self._setup_level()
 
-    def _reset_positions(self) -> None:
-        self.pacman.direction = (0, 0)
-        self.pacman.x, self.pacman.y = self.pacman.spawn_pos
+    def _lose_life(self) -> None:
+        self.lives -= 1
+        self.pacman.reset()
         for ghost in self.ghosts:
-            ghost.x, ghost.y = ghost.spawn_pos
+            ghost.reset()
 
     def _check_collision(self) -> None:
         for ghost in self.ghosts:
@@ -134,8 +138,8 @@ class Game:
             if pacman_pos == ghost_pos or (
                 self.pacman.prev == ghost_pos and ghost.prev == pacman_pos
             ):
-                self.lives -= 1
-                self._reset_positions()
+                self._lose_life()
+                return
 
     @property
     def is_alive(self) -> bool:
@@ -143,7 +147,7 @@ class Game:
 
     def move_pacman(self, key: int) -> None:
         if key in DIRECTIONS:
-            self.pacman.direction = DIRECTIONS[key]
+            self.pacman.wanted_direction = DIRECTIONS[key]
 
     def move_ghost(self, dt: float) -> None:
         for ghost in self.ghosts:
@@ -166,6 +170,8 @@ class Game:
             return
 
         if self.pacman.tick(dt):
+            if self.pacman.able_to_move(self.pacman.wanted_direction):
+                self.pacman.direction = self.pacman.wanted_direction
             self.pacman.move(self.pacman.direction)
             self.eat_gum()
 
