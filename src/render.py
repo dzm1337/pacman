@@ -7,6 +7,7 @@ from src.definitions import (
     BACKGROUND,
     CELL_SIZE,
     FPS,
+    HUD_HEIGHT,
     MAX_LEVEL,
     GameState,
     Screen,
@@ -100,12 +101,15 @@ class Render:
         screen: Surface = pygame.display.set_mode(
             (
                 self.game.width * CELL_SIZE,
-                self.game.height * CELL_SIZE,
+                self.game.height * CELL_SIZE + HUD_HEIGHT,
             ),
             pygame.SCALED,
         )
         pygame.font.init()
-        self.draw.load_assets()
+        try:
+            self.draw.load_assets()
+        except Exception as e:
+            print(f"Error to load asset: {e}")
 
         pygame.display.set_caption("PACMAN")
         clock = pygame.time.Clock()
@@ -124,8 +128,8 @@ class Render:
             elif self.screen_state == Screen.PLAYING:
                 if self.game.state == GameState.PLAYING:
                     self.game.update(dt)
-                    self.game.move_ghost(dt)
                     self.draw.game_screen(screen)
+                    self.game.move_ghost(dt)
                 elif self.game.state == GameState.LOST:
                     self.screen_state = Screen.GAME_OVER
                 elif self.game.state == GameState.WON:
