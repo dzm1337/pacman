@@ -13,6 +13,7 @@ from src.definitions import (
     LEFT,
     PACMAN_COLOR,
     RIGHT,
+    STILL,
     UP,
     WALL_COLOR,
     WALL_WIDTH,
@@ -67,12 +68,12 @@ class Draw:
         self.pacman_right = self._load_sprite("assets/game/pacman_right.png")
         self.pacman_left = self._load_sprite("assets/game/pacman_left.png")
         self.pacman_up = self._load_sprite("assets/game/pacman_up.png")
-        self.hud_pacman = self._load_sprite("assets/hud/pacman.png")
         self.pacman_directions = {
             UP: self.pacman_up,
             DOWN: self.pacman_down,
             LEFT: self.pacman_left,
             RIGHT: self.pacman_right,
+            STILL: self.pacman_right,
         }
 
     def _load_sprite(self, path: str) -> Surface:
@@ -330,7 +331,7 @@ class Draw:
             ("TIME", str(time_left), time_color),
         )
         lives = f"x{self.game.lives}"
-        icon_w = self.hud_pacman.get_width()
+        icon_w = self.pacman_right.get_width()
 
         for font in self.hud_fonts:
             widths = [
@@ -355,8 +356,8 @@ class Draw:
             left += width + space
 
         # Lives: pacman icon followed by the counter
-        icon = self.hud_pacman.get_rect(midleft=(left, y))
-        screen.blit(self.hud_pacman, icon)
+        icon = self.pacman_right.get_rect(midleft=(left, y))
+        screen.blit(self.pacman_right, icon)
         self.text(
             screen,
             lives,
