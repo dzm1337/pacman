@@ -1,5 +1,5 @@
 from src.config import Config
-from src.definitions import WALLS
+from src.definitions import STILL, WALLS
 from src.maze import Maze
 
 
@@ -12,7 +12,7 @@ class Entity:
         y: int,
         color: tuple[int, int, int],
         sprite_path: str,
-        vel: int
+        vel: int,
     ) -> None:
         self.color = color
         self.maze = maze
@@ -23,13 +23,16 @@ class Entity:
         self.spawn_pos = x, y
         self.vel = vel
         self.sprite_path = sprite_path
-        self.prev = 0, 0
+        self.wanted_direction = 0, 0
+        self.prev = self.spawn_pos
 
     def able_to_move(self, direction: tuple[int, int]) -> bool:
         """
         Takes the cell position and compare with the
         moviment to verify if the entity is able to move
         """
+        if direction == STILL:
+            return False
         dx, dy = direction
         wall = WALLS[(dx, dy)]
         return not (self.maze.get_maze[self.y][self.x] & wall)
@@ -52,6 +55,13 @@ class Entity:
         # print("Walk")
         return True
 
+    def reset(self) -> None:
+        self.x, self.y = self.spawn_pos
+        self.direction = STILL
+        self.wanted_direction = STILL
+        self.move_timer = 0
+        self.prev = self.spawn_pos
+
     def render_pos(self) -> tuple[float, float]:
         t = min(self.move_timer * self.vel, 1.0)
         px, py = self.prev
@@ -59,7 +69,7 @@ class Entity:
 
     def move(self, direction: tuple[int, int]) -> None:
         dx, dy = direction
-        if direction != (0, 0) and self.able_to_move(direction):
+        self.prev = self.x, self.y
+        if self.able_to_move(direction):
             self.x += dx
             self.y += dy
-            self.prev = self.x - dx, self.y - dy
