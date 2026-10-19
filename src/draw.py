@@ -19,10 +19,10 @@ from src.definitions import (
     WALL_WIDTH,
     WHITE,
     E,
+    GhostState,
     N,
     S,
     W,
-    GhostState,
 )
 from src.game import Game
 
@@ -65,6 +65,7 @@ class Draw:
         self.current_pacman_sprite = self._load_sprite(
             self.game.pacman.sprite_path
         )
+        self.frightened_ghost = self._load_sprite("assets/game/frightened.png")
         self.pacman_down = self._load_sprite("assets/game/pacman_down.png")
         self.pacman_right = self._load_sprite("assets/game/pacman_right.png")
         self.pacman_left = self._load_sprite("assets/game/pacman_left.png")
@@ -89,11 +90,11 @@ class Draw:
             gx, gy = ghost.render_pos()
             px: int = int(gx * CELL_SIZE + CELL_SIZE // 2)
             py: int = int(gy * CELL_SIZE + CELL_SIZE // 2)
-            
-            if self.game.ghost_state == GhostState.CHASE:
+
+            if ghost.state == GhostState.CHASE:
                 rect = self.playing_ghost[i].get_rect(center=(px, py))
                 screen.blit(self.playing_ghost[i], rect)
-            elif self.game.ghost_state == GhostState.FRIGHTENED:
+            elif ghost.state == GhostState.FRIGHTENED:
                 rect = self.frightened_ghost.get_rect(center=(px, py))
                 screen.blit(self.frightened_ghost, rect)
 

@@ -25,7 +25,6 @@ class Game:
         self.score = 0
         self.level = 1
         self.state = GameState.PLAYING
-        self.ghost_state = GhostState.CHASE
         self.lives = self.config.lives
         self.time_left = config.level_max_time
         self.menu_options = [
@@ -162,18 +161,15 @@ class Game:
             self.pacman.wanted_direction = DIRECTIONS[key]
 
     def move_ghost(self, dt: float) -> None:
-        if self.time_left <= 75:
-            self.ghost_state = GhostState.FRIGHTENED
         for ghost in self.ghosts:
             ghost.update_state(dt)
             if ghost.tick(dt):
-                if self.ghost_state == GhostState.CHASE:
+                if ghost.state == GhostState.CHASE:
                     ghost.direction = ghost.get_dir(self.pacman)
                     ghost.move(ghost.direction)
-                elif self.ghost_state == GhostState.FRIGHTENED:
+                elif ghost.state == GhostState.FRIGHTENED:
                     ghost.direction = ghost.get_dir_spawn(ghost.spawn_pos)
                     ghost.move(ghost.direction)
-
 
     def _decide_state(self) -> None:
         if self.is_level_won:
