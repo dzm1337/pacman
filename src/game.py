@@ -10,6 +10,7 @@ from src.definitions import (
     PACMAN_COLOR,
     PINKY_COLOR,
     GameState,
+    GhostState,
 )
 from src.ghosts import Blinky, Clyde, Inky, Pinky
 from src.maze import Maze
@@ -46,7 +47,7 @@ class Game:
 
     @property
     def is_level_won(self) -> bool:
-        return not self.pacgums
+        return not self.pacgums and not self.super_pacgums_pos
 
     def _level_size(self) -> tuple[int, int]:
         i = self.level - 1
@@ -65,11 +66,22 @@ class Game:
         self.time_left = self.config.level_max_time
         self.width, self.height = self._level_size()
         self.maze = Maze(self.width, self.height, self._level_seed())
+        # Open cell closest to each corner (x, y), in case a corner is a wall:
+        # top-left, top-right, bottom-left, bottom-right
+        self.corners: list[tuple[int, int]] = [
+            self.maze.find_nearest_open_cell(x, y)
+            for x, y in (
+                (0, 0),
+                (self.width - 1, 0),
+                (0, self.height - 1),
+                (self.width - 1, self.height - 1),
+            )
+        ]
         self.ghosts = [
             Inky(
                 self.maze,
                 self.config,
-                *self.maze.find_nearest_open_cell(0, 0),
+                *self.corners[0],
                 color=INKY_COLOR,
                 sprite_path="assets/game/inky.png",
                 vel=2.7,
@@ -77,7 +89,7 @@ class Game:
             Pinky(
                 self.maze,
                 self.config,
-                *self.maze.find_nearest_open_cell(self.width - 1, 0),
+                *self.corners[1],
                 color=PINKY_COLOR,
                 sprite_path="assets/game/pinky.png",
                 vel=2.5,
@@ -85,7 +97,7 @@ class Game:
             Clyde(
                 self.maze,
                 self.config,
-                *self.maze.find_nearest_open_cell(0, self.height - 1),
+                *self.corners[2],
                 color=CLYDE_COLOR,
                 sprite_path="assets/game/clyde.png",
                 vel=2.5,
@@ -93,27 +105,26 @@ class Game:
             Blinky(
                 self.maze,
                 self.config,
-                *self.maze.find_nearest_open_cell(
-                    self.width - 1, self.height - 1
-                ),
+                *self.corners[3],
                 color=BLINKY_COLOR,
                 sprite_path="assets/game/blinky.png",
                 vel=2.2,
             ),
         ]
-
         self.pacman = Pacman(
             self.maze, self.config, PACMAN_COLOR, "assets/game/pacman.png", 4
         )
-
         self.pacgums: set[tuple[int, int]] = {
             (y, x)
             for x in range(self.width)
             for y in range(self.height)
             if self.maze.get_maze[y][x] != 15
         }
-
+        self.super_pacgums_pos: set[tuple[int, int]] = set(self.corners)
         self.pacgums.discard((self.pacman.y, self.pacman.x))
+        # Corners hold a super pacgum instead of a normal one
+        for x, y in self.corners:
+            self.pacgums.discard((y, x))
 
     def next_level(self) -> None:
         self.level += 1
@@ -151,6 +162,7 @@ class Game:
 
     def move_ghost(self, dt: float) -> None:
         for ghost in self.ghosts:
+            ghost.update_state(dt)
             if ghost.tick(dt):
                 ghost.direction = ghost.get_dir(self.pacman)
                 ghost.move(ghost.direction)
@@ -173,6 +185,7 @@ class Game:
             if self.pacman.able_to_move(self.pacman.wanted_direction):
                 self.pacman.direction = self.pacman.wanted_direction
             self.pacman.move(self.pacman.direction)
+            self.eat_super_gum()
             self.eat_gum()
 
         self._decide_state()
@@ -188,3 +201,14 @@ class Game:
         if pos in self.pacgums:
             self.pacgums.remove(pos)
             self.score += self.config.points_per_pacgum
+
+    def eat_super_gum(self) -> None:
+        """
+        Remove the super pacgum at pacman's position
+        """
+        pos = (self.pacman.x, self.pacman.y)
+        if pos in self.super_pacgums_pos:
+            self.super_pacgums_pos.remove(pos)
+            self.score += self.config.point_per_superpacgum
+            for ghost in self.ghosts:
+                ghost.set_state(GhostState.FRIGHTENED, 7)
