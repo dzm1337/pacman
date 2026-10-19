@@ -62,7 +62,6 @@ class Draw:
         self.playing_ghost = [
             self._load_sprite(ghost.sprite_path) for ghost in self.game.ghosts
         ]
-        self.frightened_ghost = self._load_sprite("assets/game/ghost_fright.png")
         self.current_pacman_sprite = self._load_sprite(
             self.game.pacman.sprite_path
         )
