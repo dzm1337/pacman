@@ -26,6 +26,7 @@ class Ghost(Entity, ABC):
         super().__init__(
             maze, config, x, y, color=color, sprite_path=sprite_path, vel=vel
         )
+        self.flag_random = False
 
     def set_state(self, state: GhostState, duration: float) -> None:
         self.state = state
@@ -36,6 +37,7 @@ class Ghost(Entity, ABC):
             self.state_timer -= dt
             if self.state_timer <= 0:
                 self.state = GhostState.CHASE
+                self.flag_random = False
 
     def _bfs(self, entry: tuple[int, int]) -> dict[tuple[int, int], int]:
         """Return the distance from `entry` to every reachable cell."""
@@ -51,6 +53,7 @@ class Ghost(Entity, ABC):
 
     def _chase(self, target: tuple[int, int]) -> tuple[int, int] | None:
         """Return the neighbour cell closest to `target`, if any."""
+        print(self.flag_random)
         here = (self.x, self.y)
         if here == target:
             return None
@@ -65,6 +68,13 @@ class Ghost(Entity, ABC):
     def get_dir(self, pacman: Pacman) -> tuple[int, int]:
         """Return the direction the ghost will take on its next step."""
         return self.random_move()
+
+    def get_dir_spawn(self, spawn_pos: tuple[int, int]) -> tuple[int, int]:
+        next_coord = self._chase(spawn_pos)
+        if next_coord is None or self.flag_random:
+            self.flag_random = True
+            return self.random_move()
+        return next_coord[0] - self.x, next_coord[1] - self.y
 
     def random_move(self) -> tuple[int, int]:
         """Keep going straight, pick a random open direction when blocked."""

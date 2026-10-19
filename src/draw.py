@@ -22,6 +22,7 @@ from src.definitions import (
     N,
     S,
     W,
+    GhostState,
 )
 from src.game import Game
 
@@ -88,9 +89,13 @@ class Draw:
             gx, gy = ghost.render_pos()
             px: int = int(gx * CELL_SIZE + CELL_SIZE // 2)
             py: int = int(gy * CELL_SIZE + CELL_SIZE // 2)
-
-            rect = self.playing_ghost[i].get_rect(center=(px, py))
-            screen.blit(self.playing_ghost[i], rect)
+            
+            if self.game.ghost_state == GhostState.CHASE:
+                rect = self.playing_ghost[i].get_rect(center=(px, py))
+                screen.blit(self.playing_ghost[i], rect)
+            elif self.game.ghost_state == GhostState.FRIGHTENED:
+                rect = self.frightened_ghost.get_rect(center=(px, py))
+                screen.blit(self.frightened_ghost, rect)
 
     def super_pacgum(self, screen: Surface) -> None:
         for gum in self.game.super_pacgums_pos:
