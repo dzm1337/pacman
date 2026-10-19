@@ -53,6 +53,7 @@ class Render:
         elif event.type == pygame.KEYDOWN:
             if event.key in (pygame.K_CAPSLOCK, pygame.K_ASTERISK):
                 self.game.pacgums = []
+                self.game.super_pacgums_pos = []
             if self.screen_state == Screen.MENU:
                 self.game.menu_index = self._screen_handler(
                     event.key,

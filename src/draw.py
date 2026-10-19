@@ -62,6 +62,7 @@ class Draw:
         self.playing_ghost = [
             self._load_sprite(ghost.sprite_path) for ghost in self.game.ghosts
         ]
+        self.frightened_ghost = self._load_sprite("assets/game/frightened.png")
         self.current_pacman_sprite = self._load_sprite(
             self.game.pacman.sprite_path
         )
@@ -69,6 +70,9 @@ class Draw:
         self.pacman_right = self._load_sprite("assets/game/pacman_right.png")
         self.pacman_left = self._load_sprite("assets/game/pacman_left.png")
         self.pacman_up = self._load_sprite("assets/game/pacman_up.png")
+        self.super_pacgum_sprite = self._load_sprite(
+            "assets/game/superpacgum.png"
+        )
         self.pacman_directions = {
             UP: self.pacman_up,
             DOWN: self.pacman_down,
@@ -87,12 +91,19 @@ class Draw:
             px: int = int(gx * CELL_SIZE + CELL_SIZE // 2)
             py: int = int(gy * CELL_SIZE + CELL_SIZE // 2)
             
-            if self.game.ghost_state == GhostState.CHASE:
+            if ghost.state == GhostState.CHASE:
                 rect = self.playing_ghost[i].get_rect(center=(px, py))
                 screen.blit(self.playing_ghost[i], rect)
-            elif self.game.ghost_state == GhostState.FRIGHTENED:
+            elif ghost.state == GhostState.FRIGHTENED:
                 rect = self.frightened_ghost.get_rect(center=(px, py))
                 screen.blit(self.frightened_ghost, rect)
+
+    def super_pacgum(self, screen: Surface) -> None:
+        for gum in self.game.super_pacgums_pos:
+            px: int = gum[0] * CELL_SIZE + CELL_SIZE // 2
+            py: int = gum[1] * CELL_SIZE + CELL_SIZE // 2
+            rect = self.super_pacgum_sprite.get_rect(center=(px, py))
+            screen.blit(self.super_pacgum_sprite, rect)
 
     def pacman(self, screen: Surface, dx: int, dy: int) -> None:
         if self.game.pacman.direction in self.pacman_directions:
@@ -320,6 +331,7 @@ class Draw:
         board = screen.subsurface((0, HUD_HEIGHT, width, height - HUD_HEIGHT))
         self.maze(board)
         self.gums(board)
+        self.super_pacgum(board)
         self.ghosts(board)
         self.pacman(board, self.game.pacman.x, self.game.pacman.y)
 
