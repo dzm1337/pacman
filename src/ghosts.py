@@ -3,7 +3,7 @@ from abc import ABC
 from collections import deque
 
 from src.config import Config
-from src.definitions import DOWN, LEFT, RIGHT, STILL, UP
+from src.definitions import DOWN, LEFT, RIGHT, STILL, UP, GhostState
 from src.entity import Entity
 from src.maze import Maze
 from src.pacman import Pacman
@@ -23,6 +23,7 @@ class Ghost(Entity, ABC):
         super().__init__(
             maze, config, x, y, color=color, sprite_path=sprite_path, vel=vel
         )
+        self.flag_random = False
 
     # Change the state of the Ghost, chase / scatter / frightened / eaten
     def change_state(self) -> None: ...
@@ -55,6 +56,14 @@ class Ghost(Entity, ABC):
     def get_dir(self, pacman: Pacman) -> tuple[int, int]:
         """Return the direction the ghost will take on its next step."""
         return self.random_move()
+
+    def get_dir_spawn(self, spawn_pos: tuple[int, int]) -> tuple[int, int]:
+        next_coord = self._chase(spawn_pos)
+        if next_coord is None or self.flag_random:
+            self.flag_random = True
+            return self.random_move()
+        return next_coord[0] - self.x, next_coord[1] - self.y
+        
 
     def random_move(self) -> tuple[int, int]:
         """Keep going straight, pick a random open direction when blocked."""
@@ -95,7 +104,6 @@ class Pinky(Ghost):
         return next_coord[0] - self.x, next_coord[1] - self.y
 
    
-        
 
 
 # The Clyde will target 8 spaces ahead of the pac-man.
