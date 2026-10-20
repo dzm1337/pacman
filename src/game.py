@@ -149,6 +149,12 @@ class Game:
             if pacman_pos == ghost_pos or (
                 self.pacman.prev == ghost_pos and ghost.prev == pacman_pos
             ):
+                if ghost.state == GhostState.FRIGHTENED:
+                    ghost.get_eaten()
+                    self.score += self.config.points_per_ghost
+                    return
+                elif ghost.state == GhostState.EATEN:
+                    return
                 self._lose_life()
                 return
 
@@ -170,6 +176,14 @@ class Game:
                 elif ghost.state == GhostState.FRIGHTENED:
                     ghost.direction = ghost.get_dir_spawn(ghost.spawn_pos)
                     ghost.move(ghost.direction)
+                elif ghost.state == GhostState.EATEN:
+                    if (ghost.x, ghost.y) != ghost.spawn_pos:
+                        ghost.direction = ghost.get_dir_spawn(ghost.spawn_pos)
+                        ghost.move(ghost.direction)
+                    elif ghost.state_timer <= 0:
+                        # The eyes just got home: wait there, then revive
+                        # (update_state calls revive when the wait is over)
+                        ghost.wait_at_home()
 
     def _decide_state(self) -> None:
         if self.is_level_won:
@@ -215,4 +229,5 @@ class Game:
             self.super_pacgums_pos.remove(pos)
             self.score += self.config.point_per_superpacgum
             for ghost in self.ghosts:
-                ghost.set_state(GhostState.FRIGHTENED, 7)
+                if ghost.state != GhostState.EATEN:
+                    ghost.set_state(GhostState.FRIGHTENED, 7)

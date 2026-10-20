@@ -12,7 +12,7 @@ class Entity:
         y: int,
         color: tuple[int, int, int],
         sprite_path: str,
-        vel: int,
+        vel: float,
     ) -> None:
         self.color = color
         self.maze = maze
