@@ -3,7 +3,16 @@ from abc import ABC
 from collections import deque
 
 from src.config import Config
-from src.definitions import DOWN, LEFT, RIGHT, STILL, UP, GhostState
+from src.definitions import (
+    DOWN,
+    EATEN_VEL,
+    EATEN_WAIT,
+    LEFT,
+    RIGHT,
+    STILL,
+    UP,
+    GhostState,
+)
 from src.entity import Entity
 from src.maze import Maze
 from src.pacman import Pacman
@@ -27,6 +36,7 @@ class Ghost(Entity, ABC):
             maze, config, x, y, color=color, sprite_path=sprite_path, vel=vel
         )
         self.flag_random = False
+        self.base_vel = vel
 
     def set_state(self, state: GhostState, duration: float) -> None:
         self.state = state
@@ -36,8 +46,31 @@ class Ghost(Entity, ABC):
         if self.state_timer > 0:
             self.state_timer -= dt
             if self.state_timer <= 0:
-                self.state = GhostState.CHASE
-                self.flag_random = False
+                if self.state == GhostState.EATEN:
+                    self.revive()
+                else:
+                    self.state = GhostState.CHASE
+                    self.flag_random = False
+
+    def get_eaten(self) -> None:
+        """Turn into eyes that run back to the spawn corner."""
+        self.set_state(GhostState.EATEN, 0)
+        self.vel = EATEN_VEL
+        # Go straight home, even if it was wandering randomly
+        self.flag_random = False
+
+    def wait_at_home(self) -> None:
+        """Stay as eyes in the spawn corner for a while before reviving."""
+        self.set_state(GhostState.EATEN, EATEN_WAIT)
+        # Stand still in the corner: no sliding back to the previous cell
+        self.prev = self.x, self.y
+        self.direction = STILL
+
+    def revive(self) -> None:
+        """Back to normal once the eyes reach the spawn corner."""
+        self.set_state(GhostState.CHASE, 0)
+        self.vel = self.base_vel
+        self.flag_random = False
 
     def _bfs(self, entry: tuple[int, int]) -> dict[tuple[int, int], int]:
         """Return the distance from `entry` to every reachable cell."""
@@ -53,7 +86,6 @@ class Ghost(Entity, ABC):
 
     def _chase(self, target: tuple[int, int]) -> tuple[int, int] | None:
         """Return the neighbour cell closest to `target`, if any."""
-        print(self.flag_random)
         here = (self.x, self.y)
         if here == target:
             return None
