@@ -19,12 +19,20 @@ from src.definitions import (
     WALL_WIDTH,
     WHITE,
     E,
+    GhostState,
     N,
     S,
     W,
-    GhostState,
 )
 from src.game import Game
+
+# Sprite file suffix for each direction (e.g. pacman_up.png, eyes_up.png)
+DIRECTION_NAMES = (
+    (UP, "up"),
+    (DOWN, "down"),
+    (LEFT, "left"),
+    (RIGHT, "right"),
+)
 
 FONT_PATH = "assets/fonts/pacman.ttf"
 OPTION_SPACING = 65
@@ -66,20 +74,23 @@ class Draw:
         self.current_pacman_sprite = self._load_sprite(
             self.game.pacman.sprite_path
         )
-        self.pacman_down = self._load_sprite("assets/game/pacman_down.png")
-        self.pacman_right = self._load_sprite("assets/game/pacman_right.png")
-        self.pacman_left = self._load_sprite("assets/game/pacman_left.png")
-        self.pacman_up = self._load_sprite("assets/game/pacman_up.png")
+        self.frightened_ghost = self._load_sprite("assets/game/frightened.png")
+        # Eyes of an eaten ghost, looking where it goes
+        self.eyes = {
+            direction: self._load_sprite(f"assets/game/eyes_{name}.png")
+            for direction, name in DIRECTION_NAMES
+        }
+        # Waiting in its corner, the eaten ghost looks straight ahead
+        self.eyes[STILL] = self._load_sprite("assets/game/eyes_still.png")
+        self.pacman_directions = {
+            direction: self._load_sprite(f"assets/game/pacman_{name}.png")
+            for direction, name in DIRECTION_NAMES
+        }
+        # Standing still, pacman looks right
+        self.pacman_directions[STILL] = self.pacman_directions[RIGHT]
         self.super_pacgum_sprite = self._load_sprite(
             "assets/game/superpacgum.png"
         )
-        self.pacman_directions = {
-            UP: self.pacman_up,
-            DOWN: self.pacman_down,
-            LEFT: self.pacman_left,
-            RIGHT: self.pacman_right,
-            STILL: self.pacman_right,
-        }
 
     def _load_sprite(self, path: str) -> Surface:
         image = pygame.image.load(path).convert_alpha()
@@ -90,13 +101,16 @@ class Draw:
             gx, gy = ghost.render_pos()
             px: int = int(gx * CELL_SIZE + CELL_SIZE // 2)
             py: int = int(gy * CELL_SIZE + CELL_SIZE // 2)
-            
             if ghost.state == GhostState.CHASE:
                 rect = self.playing_ghost[i].get_rect(center=(px, py))
                 screen.blit(self.playing_ghost[i], rect)
             elif ghost.state == GhostState.FRIGHTENED:
                 rect = self.frightened_ghost.get_rect(center=(px, py))
                 screen.blit(self.frightened_ghost, rect)
+            elif ghost.state == GhostState.EATEN:
+                eyes = self.eyes.get(ghost.direction, self.eyes[RIGHT])
+                rect = eyes.get_rect(center=(px, py))
+                screen.blit(eyes, rect)
 
     def super_pacgum(self, screen: Surface) -> None:
         for gum in self.game.super_pacgums_pos:
@@ -348,7 +362,7 @@ class Draw:
             ("TIME", str(time_left), time_color),
         )
         lives = f"x{self.game.lives}"
-        icon_w = self.pacman_right.get_width()
+        icon_w = self.pacman_directions[RIGHT].get_width()
 
         for font in self.hud_fonts:
             widths = [
@@ -373,8 +387,9 @@ class Draw:
             left += width + space
 
         # Lives: pacman icon followed by the counter
-        icon = self.pacman_right.get_rect(midleft=(left, y))
-        screen.blit(self.pacman_right, icon)
+        life_icon = self.pacman_directions[RIGHT]
+        icon = life_icon.get_rect(midleft=(left, y))
+        screen.blit(life_icon, icon)
         self.text(
             screen,
             lives,
