@@ -13,10 +13,13 @@ def parse_args(argv: list[str]) -> Path:
 
     if len(args) != 1:
         fail(
-            "expected exactly one argument.\b usage: python3 -m src <config.json>"
+            "expected exactly one argument.\n usage: python3 -m src <config.json>"
         )
 
-    path = Path(__file__).parent.parent / "config" / f"{args[0]}"
+    try:
+        path = Path(__file__).parent.parent / f"{args[0]}"
+    except Exception:
+        fail("invalid path for <config.json>")
 
     if path.suffix != ".json":
         fail(f"{path} is not a .json file.")

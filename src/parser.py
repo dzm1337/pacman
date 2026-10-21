@@ -6,10 +6,9 @@ from sys import stderr
 from typing import Any, NoReturn
 
 DEFAULT_CFG_PARAMS: dict[str, Any] = {
-    "highscore_filename": "highscore.json",
     "level": [],
-    "width": 12,
-    "height": 10,
+    "width": 14,
+    "height": 14,
     "lives": 3,
     "pacgum": 42,
     "points_per_pacgum": 10,
@@ -24,15 +23,18 @@ def is_positive(value: Any) -> bool:
     return isinstance(value, int) and not isinstance(value, bool) and value > 0
 
 
-def is_highscore_filename(value: Any) -> bool:
-    return isinstance(value, str) and value.endswith(".json")
+# Maze size limits (in cells): smaller mazes don't fit the menus and texts,
+# bigger ones don't fit on a screen. Values outside are clamped.
+SIZE_LIMITS: dict[str, tuple[int, int]] = {
+    "width": (12, 25),
+    "height": (12, 15),
+}
 
 
 Rule = tuple[Callable[[Any], bool], str]
 
 DEFAULT_RULE: Rule = (is_positive, "a strictly positive integer")
 RULES: dict[str, Rule] = {
-    "highscore_filename": (is_highscore_filename, "a .json filename"),
     "level": (lambda v: isinstance(v, list), "a list"),
 }
 
@@ -90,14 +92,59 @@ class Parser:
             return raw[param]
         return deepcopy(default)
 
+    def _clamp_size(self, param: str, value: int, where: str = "") -> int:
+        """
+        Keep a width or height inside SIZE_LIMITS, warning when it changes
+        """
+        low, high = SIZE_LIMITS[param]
+        clamped = min(max(value, low), high)
+        if clamped != value:
+            warn(
+                f"{where}{param} must be between {low} and {high}, "
+                f"got {value}, using {clamped}."
+            )
+        return clamped
+
+    def _resolve_levels(
+        self, levels: list[Any], width: int, height: int
+    ) -> list[dict[str, int]]:
+        """
+        Check every level entry: each one needs a valid width and height,
+        a missing or wrong value uses the global width or height instead
+        """
+        resolved = []
+        for i, level in enumerate(levels, start=1):
+            where = f"level {i}: "
+            if not isinstance(level, dict):
+                warn(f"{where}must be an object, got {level}, using defaults.")
+                level = {}
+            size = {}
+            for param, default in (("width", width), ("height", height)):
+                value = level.get(param, default)
+                if not is_positive(value):
+                    warn(
+                        f"{where}{param} must be a strictly positive "
+                        f"integer, got {value}, using {default}."
+                    )
+                    value = default
+                size[param] = self._clamp_size(param, value, where)
+            resolved.append(size)
+        return resolved
+
     def parse_config(self) -> dict[str, Any]:
         raw = self.parse_json()
         for param in raw.keys() - DEFAULT_CFG_PARAMS.keys():
             warn(f"{param} is not a known parameter, ignoring it.")
-        return {
+        config = {
             param: self._resolve(raw, param, default)
             for param, default in DEFAULT_CFG_PARAMS.items()
         }
+        for param in SIZE_LIMITS:
+            config[param] = self._clamp_size(param, config[param])
+        config["level"] = self._resolve_levels(
+            config["level"], config["width"], config["height"]
+        )
+        return config
 
 
 if __name__ == "__main__":

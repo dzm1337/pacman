@@ -3,8 +3,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Config:
-    highscore_filename: str
-    level: list
+    level: list[dict[str, int]]
     width: int
     height: int
     lives: int
