@@ -4,12 +4,15 @@ import pygame
 from pygame import Surface
 
 from src.definitions import (
+    BLINK_PERIOD,
     BLINKY_COLOR,
     CELL_SIZE,
     COLOR_42,
     DOWN,
+    FRIGHTENED_BLINK_TIME,
     GUM_COLOR,
     HUD_HEIGHT,
+    MAX_LEVEL,
     LEFT,
     PACMAN_COLOR,
     RIGHT,
@@ -70,10 +73,10 @@ class Draw:
         self.playing_ghost = [
             self._load_sprite(ghost.sprite_path) for ghost in self.game.ghosts
         ]
-        self.current_pacman_sprite = self._load_sprite(
-            self.game.pacman.sprite_path
-        )
         self.frightened_ghost = self._load_sprite("assets/game/frightened.png")
+        self.frightened_white = self._load_sprite(
+            "assets/game/frightened_white.png"
+        )
         # Eyes of an eaten ghost, looking where it goes
         self.eyes = {
             direction: self._load_sprite(f"assets/game/eyes_{name}.png")
@@ -85,8 +88,20 @@ class Draw:
             direction: self._load_sprite(f"assets/game/pacman_{name}.png")
             for direction, name in DIRECTION_NAMES
         }
-        # Standing still, pacman looks right
-        self.pacman_directions[STILL] = self.pacman_directions[RIGHT]
+        # Mouth animation for each direction: open, half, closed, half
+        self.pacman_frames = {
+            direction: [
+                self.pacman_directions[direction],
+                self._load_sprite(f"assets/game/pacman_{name}_half.png"),
+                self._load_sprite(f"assets/game/pacman_{name}_closed.png"),
+                self._load_sprite(f"assets/game/pacman_{name}_half.png"),
+            ]
+            for direction, name in DIRECTION_NAMES
+        }
+        # Standing still (start or respawn), pacman looks right
+        self.pacman_frames[STILL] = self.pacman_frames[RIGHT]
+        # Last direction pacman moved to, kept while he is blocked
+        self.pacman_facing = RIGHT
         self.super_pacgum_sprite = self._load_sprite(
             "assets/game/superpacgum.png"
         )
@@ -105,8 +120,13 @@ class Draw:
                 rect = self.playing_ghost[i].get_rect(center=(px, py))
                 screen.blit(self.playing_ghost[i], rect)
             elif ghost.state == GhostState.FRIGHTENED:
-                rect = self.frightened_ghost.get_rect(center=(px, py))
-                screen.blit(self.frightened_ghost, rect)
+                sprite = self.frightened_ghost
+                # Almost edible no more: blink white to warn the player
+                ending = ghost.state_timer <= FRIGHTENED_BLINK_TIME
+                if ending and int(ghost.state_timer / BLINK_PERIOD) % 2:
+                    sprite = self.frightened_white
+                rect = sprite.get_rect(center=(px, py))
+                screen.blit(sprite, rect)
             elif ghost.state == GhostState.EATEN:
                 eyes = self.eyes.get(ghost.direction, self.eyes[RIGHT])
                 rect = eyes.get_rect(center=(px, py))
@@ -120,16 +140,24 @@ class Draw:
             screen.blit(self.super_pacgum_sprite, rect)
 
     def pacman(self, screen: Surface, dx: int, dy: int) -> None:
-        if self.game.pacman.direction in self.pacman_directions:
-            self.current_pacman_sprite = self.pacman_directions[
-                self.game.pacman.direction
-            ]
+        pacman = self.game.pacman
+        if pacman.direction in self.pacman_frames:
+            self.pacman_facing = pacman.direction
+        frames = self.pacman_frames[self.pacman_facing]
 
-        gx, gy = self.game.pacman.render_pos()
+        if pacman.prev == (pacman.x, pacman.y):
+            # Not moving (blocked or still): keep the mouth open
+            sprite = frames[0]
+        else:
+            # One full chomp per cell walked, following the step progress
+            step = min(pacman.move_timer * pacman.vel, 0.999)
+            sprite = frames[int(step * len(frames))]
+
+        gx, gy = pacman.render_pos()
         px: int = int(gx * CELL_SIZE + CELL_SIZE // 2)
         py: int = int(gy * CELL_SIZE + CELL_SIZE // 2)
-        rect = self.current_pacman_sprite.get_rect(center=(px, py))
-        screen.blit(self.current_pacman_sprite, rect)
+        rect = sprite.get_rect(center=(px, py))
+        screen.blit(sprite, rect)
 
     def gums(self, screen: Surface) -> None:
         for gum in self.game.pacgums:
@@ -257,10 +285,12 @@ class Draw:
         self.text(screen, text, (x + 4, y + 4), WALL_COLOR, self.title_font)
         self.text(screen, text, (x, y), color, self.title_font)
 
-    def _footer(self, screen: Surface) -> None:
+    def _footer(
+        self, screen: Surface, text: str = "Press ENTER to select"
+    ) -> None:
         self.text(
             screen,
-            "Press ENTER to select",
+            text,
             (screen.get_width() // 2, screen.get_height() - 30),
             COLOR_42,
             self.small_font,
@@ -399,9 +429,29 @@ class Draw:
             anchor="midleft",
         )
 
-    def save(self, screen: Surface, name: str) -> None:
+    def save(
+        self, screen: Surface, name: str, error: str | None = None
+    ) -> None:
         center_x = screen.get_width() // 2
         center_y = screen.get_width() // 2 + 100
+
+        if error:
+            self.text(
+                screen,
+                "Invalid name",
+                (center_x, center_y + 60),
+                BLINKY_COLOR,
+                self.small_font,
+            )
+            # Biggest font where the reason fits in the width
+            max_width = screen.get_width() - 2 * TABLE_MARGIN
+            font = next(
+                (f for f in self.table_fonts if f.size(error)[0] <= max_width),
+                self.table_fonts[-1],
+            )
+            self.text(
+                screen, error, (center_x, center_y + 95), COLOR_42, font
+            )
 
         self.text(
             screen,
@@ -507,6 +557,100 @@ class Draw:
         for i, sprite in enumerate(self.menu_ghosts):
             rect = sprite.get_rect(center=(start_x + i * gap, y))
             screen.blit(sprite, rect)
+
+    def pause(self, screen: Surface) -> None:
+        """
+        Draw the frozen game, darkened, with the pause menu on top
+        """
+        self.game_screen(screen)
+        shade = Surface(screen.get_size(), pygame.SRCALPHA)
+        shade.fill((0, 0, 0, 180))
+        screen.blit(shade, (0, 0))
+
+        center_x = screen.get_width() // 2
+        top_y = self._options(
+            screen,
+            self.game.pause_options,
+            self.game.pause_index,
+            screen.get_height() // 2 + 40,
+            self.medium_font,
+            50,
+        )
+        self._title(screen, "PAUSED", (center_x, top_y - 110))
+        self._footer(screen, "P or ESC to resume")
+
+    def instructions(self, screen: Surface) -> None:
+        """
+        Draw the controls, the points of each item and the rules
+        """
+        config = self.game.config
+        controls = [
+            ("ARROWS OR WASD", "MOVE"),
+            ("P OR ESC", "PAUSE"),
+            ("CAPS LOCK", "SKIP LEVEL"),
+        ]
+        points = [
+            ("DOT", str(config.points_per_pacgum)),
+            ("POWER PELLET", str(config.point_per_superpacgum)),
+            ("GHOST", str(config.points_per_ghost)),
+        ]
+        rules = [
+            "EAT ALL DOTS TO CLEAR A LEVEL",
+            "POWER PELLETS MAKE GHOSTS EDIBLE",
+            f"{config.lives} LIVES AND {config.level_max_time}S PER LEVEL",
+            f"CLEAR {MAX_LEVEL} LEVELS TO WIN",
+        ]
+
+        width = screen.get_width()
+        center_x = width // 2
+        left_x = TABLE_MARGIN
+        right_x = width - TABLE_MARGIN
+        max_width = width - 2 * TABLE_MARGIN
+
+        # Biggest font where every line fits in the width
+        lines = [f"{a} {b}" for a, b in controls + points] + rules
+        font = self.table_fonts[-1]
+        for candidate in self.table_fonts:
+            if all(candidate.size(line)[0] <= max_width for line in lines):
+                font = candidate
+                break
+        row_h = font.get_height() + 12
+
+        y = 50
+        self.text(
+            screen,
+            "HOW TO PLAY",
+            (center_x, y),
+            PACMAN_COLOR,
+            self.medium_font,
+        )
+        y += 60
+
+        for header, rows in (("CONTROLS", controls), ("POINTS", points)):
+            self.text(screen, header, (center_x, y), COLOR_42, font)
+            y += row_h
+            for key, value in rows:
+                self.text(
+                    screen, key, (left_x, y), WHITE, font, anchor="midleft"
+                )
+                self.text(
+                    screen,
+                    value,
+                    (right_x, y),
+                    PACMAN_COLOR,
+                    font,
+                    anchor="midright",
+                )
+                y += row_h
+            y += row_h // 2
+
+        self.text(screen, "RULES", (center_x, y), COLOR_42, font)
+        y += row_h
+        for rule in rules:
+            self.text(screen, rule, (center_x, y), WHITE, font)
+            y += row_h
+
+        self._footer(screen, "ESC to go back")
 
     def menu(self, screen: Surface) -> None:
         center_x = screen.get_width() // 2

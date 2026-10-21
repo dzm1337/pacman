@@ -6,7 +6,9 @@ from src.definitions import (
     BLINKY_COLOR,
     CLYDE_COLOR,
     DIRECTIONS,
+    FRIGHTENED_TIME,
     INKY_COLOR,
+    MAX_NAME_LENGTH,
     PACMAN_COLOR,
     PINKY_COLOR,
     GameState,
@@ -30,8 +32,11 @@ class Game:
         self.menu_options = [
             "Start",
             "Leaderboard",
+            "Instructions",
             "Quit",
         ]
+        self.pause_options = ["Resume", "Main Menu"]
+        self.pause_index = 0
         self.options = [
             "Save Score",
             "Play Again",
@@ -42,8 +47,25 @@ class Game:
         self.menu_index = 0
         self._setup_level()
 
-    def valid_player_name(self, name: str) -> bool:
-        return name.isalnum() and len(name) <= 12
+    @staticmethod
+    def valid_name_char(char: str) -> bool:
+        """
+        Return True if the character can be part of a highscore name:
+        an ASCII letter, a digit or a space
+        """
+        return char == " " or (char.isascii() and char.isalnum())
+
+    def name_error(self, name: str) -> str | None:
+        """
+        Return why the highscore name is invalid, or None if it is valid
+        """
+        if not name.strip():
+            return "Name cannot be empty"
+        if len(name) > MAX_NAME_LENGTH:
+            return f"Max {MAX_NAME_LENGTH} characters"
+        if not all(self.valid_name_char(char) for char in name):
+            return "Letters numbers and spaces only"
+        return None
 
     @property
     def is_level_won(self) -> bool:
@@ -174,7 +196,7 @@ class Game:
                     ghost.direction = ghost.get_dir(self.pacman)
                     ghost.move(ghost.direction)
                 elif ghost.state == GhostState.FRIGHTENED:
-                    ghost.direction = ghost.get_dir_spawn(ghost.spawn_pos)
+                    ghost.direction = ghost.get_dir_flee(self.pacman)
                     ghost.move(ghost.direction)
                 elif ghost.state == GhostState.EATEN:
                     if (ghost.x, ghost.y) != ghost.spawn_pos:
@@ -230,4 +252,4 @@ class Game:
             self.score += self.config.point_per_superpacgum
             for ghost in self.ghosts:
                 if ghost.state != GhostState.EATEN:
-                    ghost.set_state(GhostState.FRIGHTENED, 7)
+                    ghost.set_state(GhostState.FRIGHTENED, FRIGHTENED_TIME)

@@ -10,12 +10,20 @@ BACKGROUND = (0, 0, 0)
 WALL_COLOR = (30, 100, 255)
 GUM_COLOR = (255, 220, 100)
 MAX_LEVEL = 10
+# Highscore names: up to 10 letters, numbers and spaces
+MAX_NAME_LENGTH = 10
 PACMAN_COLOR = (255, 220, 0)
 COLOR_42 = (128, 128, 128)
 WHITE = (255, 255, 255)
 FPS = 30
 EATEN_VEL = 5.5
 EATEN_WAIT = 2.5
+# Seconds the ghosts stay edible after a super pacgum
+FRIGHTENED_TIME = 7
+# Last seconds of FRIGHTENED_TIME where the ghosts blink white,
+# and how long each blink (blue or white) lasts
+FRIGHTENED_BLINK_TIME = 2
+BLINK_PERIOD = 0.2
 WALLS = {(0, -1): N, (1, 0): E, (0, 1): S, (-1, 0): W}
 BLINKY_COLOR = (255, 0, 0)
 PINKY_COLOR = (255, 184, 255)
@@ -63,3 +71,5 @@ class Screen(Enum):
     WON = auto()
     LEADERBOARD = auto()
     SAVE = auto()
+    PAUSED = auto()
+    INSTRUCTIONS = auto()
