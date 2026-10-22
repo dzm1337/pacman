@@ -65,6 +65,10 @@ class Draw:
         self.table_fonts = [
             pygame.font.Font(FONT_PATH, size) for size in (24, 16, 8)
         ]
+        # From biggest to smallest, the instructions use the first that fits
+        self.instruction_fonts = [
+            pygame.font.Font(FONT_PATH, size) for size in (24, 20, 16, 8)
+        ]
         self.menu_pacman = self._load_sprite("assets/menu/pacman.png")
         self.menu_ghosts = [
             self._load_sprite(f"assets/menu/{name}.png")
@@ -579,6 +583,41 @@ class Draw:
         self._title(screen, "PAUSED", (center_x, top_y - 110))
         self._footer(screen, "P or ESC to resume")
 
+    def _key_table(
+        self,
+        screen: Surface,
+        header: str,
+        rows: list[tuple[str, str]],
+        y: int,
+        font: pygame.font.Font,
+        row_h: int,
+    ) -> int:
+        """
+        Draw a centered header and its key / value rows, each value
+        right after the key column so they read together.
+        Return the y where the next section starts
+        """
+        center_x = screen.get_width() // 2
+        self.text(screen, header, (center_x, y), COLOR_42, font)
+        y += row_h
+        gap = 2 * font.get_height()
+        key_w = max(font.size(key)[0] for key, _ in rows)
+        value_w = max(font.size(value)[0] for _, value in rows)
+        left_x = center_x - (key_w + gap + value_w) // 2
+        value_x = left_x + key_w + gap
+        for key, value in rows:
+            self.text(screen, key, (left_x, y), WHITE, font, anchor="midleft")
+            self.text(
+                screen,
+                value,
+                (value_x, y),
+                PACMAN_COLOR,
+                font,
+                anchor="midleft",
+            )
+            y += row_h
+        return y + row_h // 2
+
     def instructions(self, screen: Surface) -> None:
         """
         Draw the controls, the points of each item and the rules
@@ -600,21 +639,40 @@ class Draw:
             f"{config.lives} LIVES AND {config.level_max_time}S PER LEVEL",
             f"CLEAR {MAX_LEVEL} LEVELS TO WIN",
         ]
+        cheats = [
+            ("F1", "INVINCIBILITY"),
+            ("F2", "GHOST FREEZE"),
+            ("F3", "EXTRA LIFE"),
+            ("F4", "EXTRA SPEED"),
+            ("SPACE", "SKIP LEVEL"),
+        ]
 
         width = screen.get_width()
         center_x = width // 2
-        left_x = TABLE_MARGIN
-        right_x = width - TABLE_MARGIN
         max_width = width - 2 * TABLE_MARGIN
 
-        # Biggest font where every line fits in the width
-        lines = [f"{a} {b}" for a, b in controls + points] + rules
-        font = self.table_fonts[-1]
-        for candidate in self.table_fonts:
-            if all(candidate.size(line)[0] <= max_width for line in lines):
-                font = candidate
+        tables = controls + points + cheats
+        row_count = len(tables) + len(rules) + 4  # one header per section
+        max_height = screen.get_height() - 110 - 55  # title and footer
+
+        # Biggest font (then the roomiest row spacing) where it all fits
+        font, row_h = self.instruction_fonts[-1], 0
+        for candidate in self.instruction_fonts:
+            if any(candidate.size(rule)[0] > max_width for rule in rules):
+                continue
+            # Rows plus a half-row gap between each of the 4 sections
+            for padding in (12, 8, 6):
+                candidate_row_h = candidate.get_height() + padding
+                total_h = row_count * candidate_row_h + 3 * (
+                    candidate_row_h // 2
+                )
+                if total_h <= max_height:
+                    font, row_h = candidate, candidate_row_h
+                    break
+            if row_h:
                 break
-        row_h = font.get_height() + 12
+        if not row_h:
+            row_h = font.get_height() + 6
 
         y = 50
         self.text(
@@ -626,29 +684,17 @@ class Draw:
         )
         y += 60
 
-        for header, rows in (("CONTROLS", controls), ("POINTS", points)):
-            self.text(screen, header, (center_x, y), COLOR_42, font)
-            y += row_h
-            for key, value in rows:
-                self.text(
-                    screen, key, (left_x, y), WHITE, font, anchor="midleft"
-                )
-                self.text(
-                    screen,
-                    value,
-                    (right_x, y),
-                    PACMAN_COLOR,
-                    font,
-                    anchor="midright",
-                )
-                y += row_h
-            y += row_h // 2
+        y = self._key_table(screen, "CONTROLS", controls, y, font, row_h)
+        y = self._key_table(screen, "POINTS", points, y, font, row_h)
 
         self.text(screen, "RULES", (center_x, y), COLOR_42, font)
         y += row_h
         for rule in rules:
             self.text(screen, rule, (center_x, y), WHITE, font)
             y += row_h
+        y += row_h // 2
+
+        self._key_table(screen, "CHEATS", cheats, y, font, row_h)
 
         self._footer(screen, "ESC to go back")
 

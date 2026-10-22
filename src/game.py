@@ -4,6 +4,7 @@ from src.config import Config
 from src.database import Database
 from src.definitions import (
     BLINKY_COLOR,
+    CHEAT_SPEED_MULTIPLIER,
     CLYDE_COLOR,
     DIRECTIONS,
     FRIGHTENED_TIME,
@@ -148,6 +149,29 @@ class Game:
         for x, y in self.corners:
             self.pacgums.discard((y, x))
 
+    def toggle_invincibility(self) -> None:
+        self.pacman.invincible = not self.pacman.invincible
+
+    def toggle_freeze_ghost(self) -> None:
+        for ghost in self.ghosts:
+            ghost.frozen = not ghost.frozen
+
+    def add_life(self) -> None:
+        self.lives += 1
+
+    def increase_speed(self) -> None:
+        if self.pacman.vel == self.pacman.base_vel:
+            self.pacman.vel = self.pacman.base_vel * CHEAT_SPEED_MULTIPLIER
+        else:
+            self.pacman.vel = self.pacman.base_vel
+
+    def skip_level(self) -> None:
+        """
+        Clear every gum so the level is won on the next frame
+        """
+        self.pacgums.clear()
+        self.super_pacgums_pos.clear()
+
     def next_level(self) -> None:
         self.level += 1
         self._setup_level()
@@ -166,6 +190,10 @@ class Game:
 
     def _check_collision(self) -> None:
         for ghost in self.ghosts:
+            # Invincibility is blocked for frightened ghosts: they can't
+            # hurt pacman anyway, so he can still eat them
+            if self.pacman.invincible and ghost.state != GhostState.FRIGHTENED:
+                continue
             ghost_pos = ghost.x, ghost.y
             pacman_pos = self.pacman.x, self.pacman.y
             if pacman_pos == ghost_pos or (
@@ -190,6 +218,8 @@ class Game:
 
     def move_ghost(self, dt: float) -> None:
         for ghost in self.ghosts:
+            if ghost.frozen:
+                continue
             ghost.update_state(dt)
             if ghost.tick(dt):
                 if ghost.state == GhostState.CHASE:

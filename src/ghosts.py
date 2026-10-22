@@ -37,6 +37,8 @@ class Ghost(Entity, ABC):
         )
         self.flag_random = False
         self.base_vel = vel
+        # Cheat (F2): a frozen ghost stays still in the same position
+        self.frozen = False
 
     def set_state(self, state: GhostState, duration: float) -> None:
         self.state = state
