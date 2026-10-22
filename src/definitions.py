@@ -18,6 +18,8 @@ WHITE = (255, 255, 255)
 FPS = 30
 EATEN_VEL = 5.5
 EATEN_WAIT = 2.5
+# Pacman's vel is multiplied by this while the F4 speed cheat is on
+CHEAT_SPEED_MULTIPLIER = 1.5
 # Seconds the ghosts stay edible after a super pacgum
 FRIGHTENED_TIME = 7
 # Last seconds of FRIGHTENED_TIME where the ghosts blink white,

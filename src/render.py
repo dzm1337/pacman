@@ -81,6 +81,16 @@ class Render:
                 if event.key in PAUSE_KEYS:
                     self.game.pause_index = 0
                     self.screen_state = Screen.PAUSED
+                elif event.key == pygame.K_F1:
+                    self.game.toggle_invincibility()
+                elif event.key == pygame.K_F2:
+                    self.game.toggle_freeze_ghost()
+                elif event.key == pygame.K_F3:
+                    self.game.add_life()
+                elif event.key == pygame.K_F4:
+                    self.game.increase_speed()
+                elif event.key == pygame.K_SPACE:
+                    self.game.skip_level()
                 else:
                     self.game.move_pacman(event.key)
             elif self.screen_state == Screen.PAUSED:
