@@ -10,6 +10,7 @@ from src.definitions import (
     FRIGHTENED_TIME,
     INKY_COLOR,
     MAX_NAME_LENGTH,
+    PACMAN_BASE_VEL,
     PACMAN_COLOR,
     PINKY_COLOR,
     GameState,
@@ -29,14 +30,14 @@ class Game:
         self.level = 1
         self.state = GameState.PLAYING
         self.lives = self.config.lives
-        self.time_left = config.level_max_time
+        self.time_left: float = config.level_max_time
         self.menu_options = [
             "Start",
             "Leaderboard",
             "Instructions",
             "Quit",
         ]
-        self.pause_options = ["Resume", "Main Menu"]
+        self.pause_options = ["Resume", "Instructions", "Main Menu"]
         self.pause_index = 0
         self.options = [
             "Save Score",
@@ -107,7 +108,7 @@ class Game:
                 *self.corners[0],
                 color=INKY_COLOR,
                 sprite_path="assets/game/inky.png",
-                vel=2.7,
+                vel=2.4,
             ),
             Pinky(
                 self.maze,
@@ -115,7 +116,7 @@ class Game:
                 *self.corners[1],
                 color=PINKY_COLOR,
                 sprite_path="assets/game/pinky.png",
-                vel=2.5,
+                vel=2.3,
             ),
             Clyde(
                 self.maze,
@@ -123,7 +124,7 @@ class Game:
                 *self.corners[2],
                 color=CLYDE_COLOR,
                 sprite_path="assets/game/clyde.png",
-                vel=2.5,
+                vel=2.3,
             ),
             Blinky(
                 self.maze,
@@ -135,7 +136,11 @@ class Game:
             ),
         ]
         self.pacman = Pacman(
-            self.maze, self.config, PACMAN_COLOR, "assets/game/pacman.png", 4
+            self.maze,
+            self.config,
+            PACMAN_COLOR,
+            "assets/game/pacman.png",
+            PACMAN_BASE_VEL,
         )
         self.pacgums: set[tuple[int, int]] = {
             (y, x)

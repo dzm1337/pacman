@@ -1,3 +1,4 @@
+import time
 from collections.abc import Callable
 
 import pygame
@@ -29,6 +30,8 @@ class Render:
         # Why the typed name can't be saved, shown on the save screen
         self.name_error: str | None = None
         self.screen_state = Screen.MENU
+        # Screen that Esc goes back to from the instructions
+        self.instructions_back = Screen.MENU
         self.draw = draw
 
     def _select_menu_option(self, option: str) -> None:
@@ -37,6 +40,7 @@ class Render:
         elif option == "Leaderboard":
             self.screen_state = Screen.LEADERBOARD
         elif option == "Instructions":
+            self.instructions_back = Screen.MENU
             self.screen_state = Screen.INSTRUCTIONS
         elif option == "Quit":
             self.running = False
@@ -44,6 +48,9 @@ class Render:
     def _select_pause_option(self, option: str) -> None:
         if option == "Resume":
             self.screen_state = Screen.PLAYING
+        elif option == "Instructions":
+            self.instructions_back = Screen.PAUSED
+            self.screen_state = Screen.INSTRUCTIONS
         elif option == "Main Menu":
             # The menu resets the game, so the current run is dropped
             self.screen_state = Screen.MENU
@@ -63,13 +70,10 @@ class Render:
             select(option[index])
         return index
 
-    def _key_handler(self, event) -> None:
+    def _key_handler(self, event: pygame.event.Event) -> None:
         if event.type == pygame.QUIT:
             self.running = False
         elif event.type == pygame.KEYDOWN:
-            if event.key in (pygame.K_CAPSLOCK, pygame.K_ASTERISK):
-                self.game.pacgums = []
-                self.game.super_pacgums_pos = []
             if self.screen_state == Screen.MENU:
                 self.game.menu_index = self._screen_handler(
                     event.key,
@@ -89,7 +93,7 @@ class Render:
                     self.game.add_life()
                 elif event.key == pygame.K_F4:
                     self.game.increase_speed()
-                elif event.key == pygame.K_SPACE:
+                elif event.key == pygame.K_F5:
                     self.game.skip_level()
                 else:
                     self.game.move_pacman(event.key)
@@ -105,7 +109,7 @@ class Render:
                     )
             elif self.screen_state == Screen.INSTRUCTIONS:
                 if event.key == K_ESCAPE:
-                    self.screen_state = Screen.MENU
+                    self.screen_state = self.instructions_back
             elif self.screen_state == Screen.WON:
                 if event.key in (K_KP_ENTER, K_RETURN):
                     self.screen_state = Screen.SAVE
@@ -118,7 +122,7 @@ class Render:
             elif self.screen_state == Screen.SAVE:
                 self.handle_save(event)
 
-    def _save_score(self) -> int | None:
+    def _save_score(self) -> None:
         db = self.game.db
         rows = db.check_score_player(self.name)
         if not rows:
@@ -126,7 +130,7 @@ class Render:
         elif self.game.score > rows[0][0]:
             db.update_score(self.name, self.game.score)
 
-    def handle_save(self, event) -> None:
+    def handle_save(self, event: pygame.event.Event) -> None:
         if event.key in (K_RETURN, K_KP_ENTER):
             self.name_error = self.game.name_error(self.name)
             if self.name_error:
@@ -164,29 +168,27 @@ class Render:
         )
 
     def display(self) -> None:
-        screen: Surface = pygame.display.set_mode(
-            self._window_size(), pygame.SCALED
-        )
-        pygame.font.init()
+        screen: Surface = pygame.display.set_mode(self._window_size())
         try:
             self.draw.load_assets()
         except Exception as e:
             fail(f"Error to load asset: {e}")
 
         pygame.display.set_caption("PACMAN")
-        clock = pygame.time.Clock()
+        frame_time = 1 / FPS
+        last_frame = time.monotonic()
 
         self.running = True
         while self.running:
-            dt: float = clock.tick(FPS) / 1000
+            frame_start = time.monotonic()
+            dt: float = frame_start - last_frame
+            last_frame = frame_start
             for event in pygame.event.get():
                 self._key_handler(event)
 
             # Levels can have different sizes: follow the current one
             if screen.get_size() != self._window_size():
-                screen = pygame.display.set_mode(
-                    self._window_size(), pygame.SCALED
-                )
+                screen = pygame.display.set_mode(self._window_size())
             screen.fill(BACKGROUND)
 
             if self.screen_state == Screen.MENU:
@@ -218,4 +220,8 @@ class Render:
                 self.draw.instructions(screen)
 
             pygame.display.flip()
+            # Sleep the rest of the frame to run at FPS frames per second
+            spare = frame_time - (time.monotonic() - frame_start)
+            if spare > 0:
+                time.sleep(spare)
         pygame.quit()

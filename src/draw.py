@@ -1,3 +1,4 @@
+import time
 from math import ceil
 
 import pygame
@@ -10,16 +11,15 @@ from src.definitions import (
     COLOR_42,
     DOWN,
     FRIGHTENED_BLINK_TIME,
-    GUM_COLOR,
     HUD_HEIGHT,
     MAX_LEVEL,
+    MOUTH_FRAME_TIME,
     LEFT,
     PACMAN_COLOR,
     RIGHT,
     STILL,
     UP,
     WALL_COLOR,
-    WALL_WIDTH,
     WHITE,
     E,
     GhostState,
@@ -27,6 +27,7 @@ from src.definitions import (
     S,
     W,
 )
+from src.font import BitmapFont, load_fonts
 from src.game import Game
 
 # Sprite file suffix for each direction (e.g. pacman_up.png, eyes_up.png)
@@ -37,7 +38,8 @@ DIRECTION_NAMES = (
     (RIGHT, "right"),
 )
 
-FONT_PATH = "assets/fonts/pacman.ttf"
+# Every font size used by the screens, baked in assets/fonts
+FONT_SIZES = (64, 48, 32, 24, 20, 16, 8)
 OPTION_SPACING = 65
 MENU_SPRITE_SIZE = 36
 TABLE_MARGIN = 30
@@ -49,26 +51,21 @@ HUD_GAP = 8
 class Draw:
     def __init__(self, game: Game) -> None:
         self.game = game
-        self.font: pygame.font.Font
-        self.small_font: pygame.font.Font
+        self.font: BitmapFont
+        self.small_font: BitmapFont
 
     def load_assets(self) -> None:
-        self.title_font = pygame.font.Font(FONT_PATH, 64)
-        self.font = pygame.font.Font(FONT_PATH, 48)
-        self.medium_font = pygame.font.Font(FONT_PATH, 32)
-        self.small_font = pygame.font.Font(FONT_PATH, 24)
+        fonts = load_fonts(FONT_SIZES)
+        self.title_font = fonts[64]
+        self.font = fonts[48]
+        self.medium_font = fonts[32]
+        self.small_font = fonts[24]
         # From biggest to smallest, the HUD uses the first that fits
-        self.hud_fonts = [
-            pygame.font.Font(FONT_PATH, size) for size in (16, 8)
-        ]
+        self.hud_fonts = [fonts[size] for size in (16, 8)]
         # From biggest to smallest, the leaderboard uses the first that fits
-        self.table_fonts = [
-            pygame.font.Font(FONT_PATH, size) for size in (24, 16, 8)
-        ]
+        self.table_fonts = [fonts[size] for size in (24, 16, 8)]
         # From biggest to smallest, the instructions use the first that fits
-        self.instruction_fonts = [
-            pygame.font.Font(FONT_PATH, size) for size in (24, 20, 16, 8)
-        ]
+        self.instruction_fonts = [fonts[size] for size in (24, 20, 16, 8)]
         self.menu_pacman = self._load_sprite("assets/menu/pacman.png")
         self.menu_ghosts = [
             self._load_sprite(f"assets/menu/{name}.png")
@@ -109,16 +106,35 @@ class Draw:
         self.super_pacgum_sprite = self._load_sprite(
             "assets/game/superpacgum.png"
         )
+        self.pacgum_sprite = self._load_sprite("assets/game/pacgum.png")
+        # Walls are images laid on the cell edges, centered on the edge
+        self.wall_horizontal = self._load_sprite(
+            "assets/game/wall_horizontal.png"
+        )
+        self.wall_vertical = self._load_sprite("assets/game/wall_vertical.png")
+        # Top border of the maze, without the rows that would cover the HUD
+        self.wall_top_edge = self._load_sprite(
+            "assets/game/wall_horizontal_edge.png"
+        )
+        self.block_42 = self._load_sprite("assets/game/block_42.png")
 
     def _load_sprite(self, path: str) -> Surface:
         image = pygame.image.load(path).convert_alpha()
         return image
 
+    @staticmethod
+    def _cell_center(gx: float, gy: float) -> tuple[int, int]:
+        """
+        Screen position of the center of a maze cell, below the HUD
+        """
+        return (
+            int(gx * CELL_SIZE + CELL_SIZE // 2),
+            int(gy * CELL_SIZE + CELL_SIZE // 2) + HUD_HEIGHT,
+        )
+
     def ghosts(self, screen: Surface) -> None:
         for i, ghost in enumerate(self.game.ghosts):
-            gx, gy = ghost.render_pos()
-            px: int = int(gx * CELL_SIZE + CELL_SIZE // 2)
-            py: int = int(gy * CELL_SIZE + CELL_SIZE // 2)
+            px, py = self._cell_center(*ghost.render_pos())
 
             if ghost.state == GhostState.CHASE:
                 rect = self.playing_ghost[i].get_rect(center=(px, py))
@@ -138,8 +154,7 @@ class Draw:
 
     def super_pacgum(self, screen: Surface) -> None:
         for gum in self.game.super_pacgums_pos:
-            px: int = gum[0] * CELL_SIZE + CELL_SIZE // 2
-            py: int = gum[1] * CELL_SIZE + CELL_SIZE // 2
+            px, py = self._cell_center(*gum)
             rect = self.super_pacgum_sprite.get_rect(center=(px, py))
             screen.blit(self.super_pacgum_sprite, rect)
 
@@ -153,84 +168,49 @@ class Draw:
             # Not moving (blocked or still): keep the mouth open
             sprite = frames[0]
         else:
-            # One full chomp per cell walked, following the step progress
-            step = min(pacman.move_timer * pacman.vel, 0.999)
-            sprite = frames[int(step * len(frames))]
+            # Chomp at a fixed pace, whatever pacman's speed
+            seconds = time.monotonic()
+            sprite = frames[int(seconds / MOUTH_FRAME_TIME) % len(frames)]
 
-        gx, gy = pacman.render_pos()
-        px: int = int(gx * CELL_SIZE + CELL_SIZE // 2)
-        py: int = int(gy * CELL_SIZE + CELL_SIZE // 2)
+        px, py = self._cell_center(*pacman.render_pos())
         rect = sprite.get_rect(center=(px, py))
         screen.blit(sprite, rect)
 
     def gums(self, screen: Surface) -> None:
-        for gum in self.game.pacgums:
-            left = gum[1] * CELL_SIZE
-            top = gum[0] * CELL_SIZE
-            pygame.draw.circle(
-                screen,
-                GUM_COLOR,
-                (
-                    left + CELL_SIZE // 2,
-                    top + CELL_SIZE // 2,
-                ),
-                4,
+        for gy, gx in self.game.pacgums:
+            rect = self.pacgum_sprite.get_rect(
+                center=self._cell_center(gx, gy)
             )
+            screen.blit(self.pacgum_sprite, rect)
 
     def maze(self, screen: Surface) -> None:
         maze = self.game.maze.get_maze
+        # The wall images are thicker than one pixel: center them on the
+        # cell edge, the extra pixel going up / left
+        shift = (self.wall_horizontal.get_height() - 1) // 2
         for y in range(self.game.height):
             for x in range(self.game.width):
                 cell = maze[y][x]
                 left = x * CELL_SIZE
-                top = y * CELL_SIZE
+                top = y * CELL_SIZE + HUD_HEIGHT
                 right = left + CELL_SIZE
                 bottom = top + CELL_SIZE
 
                 if cell == 15:
-                    pygame.draw.rect(
-                        screen, COLOR_42, (left, top, CELL_SIZE, CELL_SIZE)
-                    )
+                    screen.blit(self.block_42, (left, top))
                     continue
 
                 if cell & N:
-                    pygame.draw.line(
-                        screen,
-                        WALL_COLOR,
-                        (left, top),
-                        (right, top),
-                        WALL_WIDTH,
-                    )
-
-                # East
+                    if y == 0:
+                        screen.blit(self.wall_top_edge, (left, top))
+                    else:
+                        screen.blit(self.wall_horizontal, (left, top - shift))
                 if cell & E:
-                    pygame.draw.line(
-                        screen,
-                        WALL_COLOR,
-                        (right, top),
-                        (right, bottom),
-                        WALL_WIDTH,
-                    )
-
-                # South
+                    screen.blit(self.wall_vertical, (right - shift, top))
                 if cell & S:
-                    pygame.draw.line(
-                        screen,
-                        WALL_COLOR,
-                        (left, bottom),
-                        (right, bottom),
-                        WALL_WIDTH,
-                    )
-
-                # West
+                    screen.blit(self.wall_horizontal, (left, bottom - shift))
                 if cell & W:
-                    pygame.draw.line(
-                        screen,
-                        WALL_COLOR,
-                        (left, top),
-                        (left, bottom),
-                        WALL_WIDTH,
-                    )
+                    screen.blit(self.wall_vertical, (left - shift, top))
 
     def text(
         self,
@@ -238,14 +218,13 @@ class Draw:
         text: str,
         pos: tuple[int, int],
         color: tuple[int, int, int],
-        font: pygame.font.Font | None = None,
+        font: BitmapFont | None = None,
         anchor: str = "center",
     ) -> None:
         font = font or self.font
-        # The font is pixel art, antialiasing only blurs its edges
-        surface = font.render(text, False, color)
-        rect = surface.get_rect(**{anchor: pos})
-        screen.blit(surface, rect)
+        rect = pygame.Rect((0, 0), font.image_size(text))
+        setattr(rect, anchor, pos)
+        font.draw(screen, text, rect.topleft, color)
 
     def _options(
         self,
@@ -253,7 +232,7 @@ class Draw:
         options: list[str],
         selected: int,
         center_y: int,
-        font: pygame.font.Font | None = None,
+        font: BitmapFont | None = None,
         spacing: int = OPTION_SPACING,
     ) -> int:
         """
@@ -374,14 +353,12 @@ class Draw:
 
     def game_screen(self, screen: Surface) -> None:
         self.hud(screen)
-        # The maze is drawn below the HUD, in its own area of the screen
-        width, height = screen.get_size()
-        board = screen.subsurface((0, HUD_HEIGHT, width, height - HUD_HEIGHT))
-        self.maze(board)
-        self.gums(board)
-        self.super_pacgum(board)
-        self.ghosts(board)
-        self.pacman(board, self.game.pacman.x, self.game.pacman.y)
+        # The maze is drawn below the HUD (see _cell_center)
+        self.maze(screen)
+        self.gums(screen)
+        self.super_pacgum(screen)
+        self.ghosts(screen)
+        self.pacman(screen, self.game.pacman.x, self.game.pacman.y)
 
     def hud(self, screen: Surface) -> None:
         """
@@ -473,8 +450,8 @@ class Draw:
         )
 
     def _table_font(
-        self, scores: list[tuple], max_width: int
-    ) -> pygame.font.Font:
+        self, scores: list[tuple[str, int]], max_width: int
+    ) -> BitmapFont:
         """
         Pick the biggest font where rank, name and score fit in max_width
         """
@@ -564,13 +541,8 @@ class Draw:
 
     def pause(self, screen: Surface) -> None:
         """
-        Draw the frozen game, darkened, with the pause menu on top
+        Draw the pause menu on a black screen
         """
-        self.game_screen(screen)
-        shade = Surface(screen.get_size(), pygame.SRCALPHA)
-        shade.fill((0, 0, 0, 180))
-        screen.blit(shade, (0, 0))
-
         center_x = screen.get_width() // 2
         top_y = self._options(
             screen,
@@ -589,7 +561,7 @@ class Draw:
         header: str,
         rows: list[tuple[str, str]],
         y: int,
-        font: pygame.font.Font,
+        font: BitmapFont,
         row_h: int,
     ) -> int:
         """
@@ -626,7 +598,6 @@ class Draw:
         controls = [
             ("ARROWS OR WASD", "MOVE"),
             ("P OR ESC", "PAUSE"),
-            ("CAPS LOCK", "SKIP LEVEL"),
         ]
         points = [
             ("DOT", str(config.points_per_pacgum)),
@@ -644,7 +615,7 @@ class Draw:
             ("F2", "GHOST FREEZE"),
             ("F3", "EXTRA LIFE"),
             ("F4", "EXTRA SPEED"),
-            ("SPACE", "SKIP LEVEL"),
+            ("F5", "SKIP LEVEL"),
         ]
 
         width = screen.get_width()

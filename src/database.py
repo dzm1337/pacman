@@ -1,6 +1,7 @@
 import sqlite3
 from contextlib import closing
 from pathlib import Path
+from typing import Any
 
 from src.parser import warn
 
@@ -36,7 +37,7 @@ class Database:
                 f"cannot open the highscore database {DB_PATH}: {e}"
             )
 
-    def _execute(self, sql: str, params: tuple = ()) -> int:
+    def _execute(self, sql: str, params: tuple[Any, ...] = ()) -> int:
         """
         Execute a query that changes the database and return the amount of
         rows changed, or 0 if the database could not be written
@@ -50,7 +51,9 @@ class Database:
             self._warn_once(f"cannot save the highscore: {e}")
             return 0
 
-    def _fetch_all(self, sql: str, params: tuple = ()) -> list[tuple]:
+    def _fetch_all(
+        self, sql: str, params: tuple[Any, ...] = ()
+    ) -> list[tuple[Any, ...]]:
         """
         Return all the rows of a query, or an empty list if the database
         could not be read
@@ -62,7 +65,7 @@ class Database:
             self._warn_once(f"cannot read the highscores: {e}")
             return []
 
-    def check_score_player(self, name: str) -> list[tuple]:
+    def check_score_player(self, name: str) -> list[tuple[int]]:
         """
         Return the saved score of a player, empty if the name is new
         """
@@ -96,7 +99,7 @@ class Database:
             (new_score, name),
         )
 
-    def top_scores(self, limit: int = 10) -> list[tuple]:
+    def top_scores(self, limit: int = 10) -> list[tuple[str, int]]:
         """
         Return the best 'limit' (name, score) pairs, highest score first
         """

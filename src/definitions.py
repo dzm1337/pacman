@@ -4,11 +4,10 @@ import pygame
 
 N, E, S, W = 1, 2, 4, 8
 CELL_SIZE = 56
-WALL_WIDTH = 10
 HUD_HEIGHT = 28
 BACKGROUND = (0, 0, 0)
 WALL_COLOR = (30, 100, 255)
-GUM_COLOR = (255, 220, 100)
+PACMAN_BASE_VEL = 3.6
 MAX_LEVEL = 10
 # Highscore names: up to 10 letters, numbers and spaces
 MAX_NAME_LENGTH = 10
@@ -16,7 +15,7 @@ PACMAN_COLOR = (255, 220, 0)
 COLOR_42 = (128, 128, 128)
 WHITE = (255, 255, 255)
 FPS = 30
-EATEN_VEL = 5.5
+EATEN_VEL = 6
 EATEN_WAIT = 2.5
 # Pacman's vel is multiplied by this while the F4 speed cheat is on
 CHEAT_SPEED_MULTIPLIER = 1.5
@@ -26,6 +25,8 @@ FRIGHTENED_TIME = 7
 # and how long each blink (blue or white) lasts
 FRIGHTENED_BLINK_TIME = 2
 BLINK_PERIOD = 0.2
+# Seconds each frame of pacman's mouth animation stays on screen
+MOUTH_FRAME_TIME = 0.1
 WALLS = {(0, -1): N, (1, 0): E, (0, 1): S, (-1, 0): W}
 BLINKY_COLOR = (255, 0, 0)
 PINKY_COLOR = (255, 184, 255)

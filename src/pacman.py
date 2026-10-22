@@ -1,8 +1,17 @@
+from src.config import Config
 from src.entity import Entity
+from src.maze import Maze
 
 
 class Pacman(Entity):
-    def __init__(self, maze, config, color, sprite_path, vel) -> None:
+    def __init__(
+        self,
+        maze: Maze,
+        config: Config,
+        color: tuple[int, int, int],
+        sprite_path: str,
+        vel: float,
+    ) -> None:
         super().__init__(
             maze,
             config,

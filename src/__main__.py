@@ -13,7 +13,8 @@ def parse_args(argv: list[str]) -> Path:
 
     if len(args) != 1:
         fail(
-            "expected exactly one argument.\n usage: python3 -m src <config.json>"
+            "expected exactly one argument.\n"
+            " usage: python3 pac-man.py <config.json>"
         )
 
     try:

@@ -27,7 +27,7 @@ class Ghost(Entity, ABC):
         y: int,
         color: tuple[int, int, int],
         sprite_path: str,
-        vel: int,
+        vel: float,
     ) -> None:
         # Change the state of the Ghost, chase / scatter / frightened / eaten
         self.state = GhostState.CHASE
@@ -138,8 +138,13 @@ class Ghost(Entity, ABC):
             return STILL
         return random.choice(valid_dir)
 
-    def find_target(self, pacman: Pacman, tiles_away: int) -> tuple[int, int]:
-        """Compute a valid coord 4 or 8 tiles away from the ghost's position."""
+    def find_target(
+        self, pacman: Pacman, tiles_away: int
+    ) -> tuple[int, int] | None:
+        """
+        Compute a valid coord 4 or 8 tiles away
+        from the ghost's position.
+        """
         px, py = pacman.x, pacman.y
         distances = self._bfs((px, py))
         for key, value in distances.items():
