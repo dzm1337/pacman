@@ -31,7 +31,8 @@ class Maze:
         """
         Return the generated maze.
         """
-        return self.maze.maze
+        maze: list[list[int]] = self.maze.maze
+        return maze
 
     def find_nearest_open_cell(
         self, center_x: int, center_y: int
