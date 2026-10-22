@@ -86,14 +86,26 @@ class Ghost(Entity, ABC):
                     distances[x] = distances[curr] + 1
         return distances
 
+    def _options(
+        self, distances: dict[tuple[int, int], int]
+    ) -> list[tuple[int, int]]:
+        """
+        Neighbour cells the ghost can step to. Like in the arcade, it
+        doesn't turn back to the cell it came from, unless it has no
+        other way out (dead end): this stops it going back and forth
+        """
+        here = (self.x, self.y)
+        options = [c for c in self.maze.neighbours[here] if c in distances]
+        forward = [c for c in options if c != self.prev]
+        return forward or options
+
     def _chase(self, target: tuple[int, int]) -> tuple[int, int] | None:
         """Return the neighbour cell closest to `target`, if any."""
-        here = (self.x, self.y)
-        if here == target:
+        if (self.x, self.y) == target:
             return None
 
         distances = self._bfs(target)
-        options = [c for c in self.maze.neighbours[here] if c in distances]
+        options = self._options(distances)
         if not options:
             return None
 
@@ -102,8 +114,7 @@ class Ghost(Entity, ABC):
     def _flee(self, target: tuple[int, int]) -> tuple[int, int] | None:
         """Return the neighbour cell farthest from `target`, if any."""
         distances = self._bfs(target)
-        here = (self.x, self.y)
-        options = [c for c in self.maze.neighbours[here] if c in distances]
+        options = self._options(distances)
         if not options:
             return None
 
@@ -136,7 +147,10 @@ class Ghost(Entity, ABC):
         valid_dir = [dir for dir in directions if self.able_to_move(dir)]
         if not valid_dir:
             return STILL
-        return random.choice(valid_dir)
+        # Don't turn back unless it's a dead end (see _options)
+        back = (-self.direction[0], -self.direction[1])
+        forward = [dir for dir in valid_dir if dir != back]
+        return random.choice(forward or valid_dir)
 
     def find_target(
         self, pacman: Pacman, tiles_away: int
