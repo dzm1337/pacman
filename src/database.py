@@ -2,6 +2,8 @@ import sqlite3
 from contextlib import closing
 from pathlib import Path
 
+from src.parser import warn
+
 DB_PATH = Path(__file__).parent.parent / "db" / "leaderboard.db"
 
 CREATE_TABLE = """
@@ -13,40 +15,58 @@ CREATE TABLE IF NOT EXISTS highscore(
 
 
 class Database:
+    def __init__(self) -> None:
+        self._warned: set[str] = set()
+
+    def _warn_once(self, message: str) -> None:
+        if message not in self._warned:
+            self._warned.add(message)
+            warn(message)
+
     def initialize_database(self) -> None:
         """
-        Create the database with initial table highscore [name, score]
+        Create the database folder and the highscore table [name, score]
         """
-        with closing(sqlite3.connect(DB_PATH)) as con:
-            con.execute(CREATE_TABLE)
+        try:
+            DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+            with closing(sqlite3.connect(DB_PATH)) as con:
+                con.execute(CREATE_TABLE)
+        except (sqlite3.Error, OSError) as e:
+            self._warn_once(
+                f"cannot open the highscore database {DB_PATH}: {e}"
+            )
 
-    def execute(self, sql: str, params: tuple = ()) -> int:
+    def _execute(self, sql: str, params: tuple = ()) -> int:
         """
-        Execute an certain query and return the amount
-        of rows that has been changed
+        Execute a query that changes the database and return the amount of
+        rows changed, or 0 if the database could not be written
         """
-        with closing(sqlite3.connect(DB_PATH)) as con:
-            cur = con.execute(sql, params)
-            con.commit()
-            return cur.rowcount
+        try:
+            with closing(sqlite3.connect(DB_PATH)) as con:
+                cur = con.execute(sql, params)
+                con.commit()
+                return cur.rowcount
+        except sqlite3.Error as e:
+            self._warn_once(f"cannot save the highscore: {e}")
+            return 0
 
-    def fetch_all(self, sql: str, params: tuple = ()) -> list[tuple]:
+    def _fetch_all(self, sql: str, params: tuple = ()) -> list[tuple]:
         """
-        Return all the currencies for a certain query
+        Return all the rows of a query, or an empty list if the database
+        could not be read
         """
-        with closing(sqlite3.connect(DB_PATH)) as con:
-            return con.execute(sql, params).fetchall()
-
-    def check_name(self, name: str) -> list[tuple]:
-        """
-        Check if a name already exists in a database
-        """
-        return self.fetch_all(
-            "SELECT * FROM highscore WHERE name = ?", (name,)
-        )
+        try:
+            with closing(sqlite3.connect(DB_PATH)) as con:
+                return con.execute(sql, params).fetchall()
+        except sqlite3.Error as e:
+            self._warn_once(f"cannot read the highscores: {e}")
+            return []
 
     def check_score_player(self, name: str) -> list[tuple]:
-        return self.fetch_all(
+        """
+        Return the saved score of a player, empty if the name is new
+        """
+        return self._fetch_all(
             "SELECT score FROM highscore WHERE name = ?", (name,)
         )
 
@@ -54,7 +74,7 @@ class Database:
         """
         Insert a player in a database
         """
-        return self.execute(
+        return self._execute(
             """
         INSERT INTO highscore(name, score)
         VALUES (?, ?);
@@ -67,7 +87,7 @@ class Database:
         Update the score of a player that
         is already in the database
         """
-        return self.execute(
+        return self._execute(
             """
         UPDATE highscore
         SET score = ?
@@ -77,7 +97,10 @@ class Database:
         )
 
     def top_scores(self, limit: int = 10) -> list[tuple]:
-        return self.fetch_all(
+        """
+        Return the best 'limit' (name, score) pairs, highest score first
+        """
+        return self._fetch_all(
             """
         SELECT name, score FROM highscore ORDER BY score DESC LIMIT ?
         """,

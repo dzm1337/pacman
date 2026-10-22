@@ -37,6 +37,8 @@ class Ghost(Entity, ABC):
         )
         self.flag_random = False
         self.base_vel = vel
+        # Cheat (F2): a frozen ghost stays still in the same position
+        self.frozen = False
 
     def set_state(self, state: GhostState, duration: float) -> None:
         self.state = state
@@ -96,6 +98,23 @@ class Ghost(Entity, ABC):
             return None
 
         return min(options, key=lambda c: distances[c])
+
+    def _flee(self, target: tuple[int, int]) -> tuple[int, int] | None:
+        """Return the neighbour cell farthest from `target`, if any."""
+        distances = self._bfs(target)
+        here = (self.x, self.y)
+        options = [c for c in self.maze.neighbours[here] if c in distances]
+        if not options:
+            return None
+
+        return max(options, key=lambda c: distances[c])
+
+    def get_dir_flee(self, pacman: Pacman) -> tuple[int, int]:
+        """Return the direction that takes the ghost away from pacman."""
+        next_coord = self._flee((pacman.x, pacman.y))
+        if next_coord is None:
+            return STILL
+        return next_coord[0] - self.x, next_coord[1] - self.y
 
     def get_dir(self, pacman: Pacman) -> tuple[int, int]:
         """Return the direction the ghost will take on its next step."""

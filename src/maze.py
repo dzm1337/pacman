@@ -11,7 +11,9 @@ class Maze:
         self.seed = seed
         try:
             self.maze = MazeGenerator(
-                size=(self.width, self.height), seed=self.seed
+                size=(self.width, self.height),
+                seed=self.seed,
+                perfect=False,
             )
         except Exception as e:
             fail(f"maze Generator Failed: {e}")

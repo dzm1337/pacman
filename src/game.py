@@ -4,9 +4,12 @@ from src.config import Config
 from src.database import Database
 from src.definitions import (
     BLINKY_COLOR,
+    CHEAT_SPEED_MULTIPLIER,
     CLYDE_COLOR,
     DIRECTIONS,
+    FRIGHTENED_TIME,
     INKY_COLOR,
+    MAX_NAME_LENGTH,
     PACMAN_COLOR,
     PINKY_COLOR,
     GameState,
@@ -30,8 +33,11 @@ class Game:
         self.menu_options = [
             "Start",
             "Leaderboard",
+            "Instructions",
             "Quit",
         ]
+        self.pause_options = ["Resume", "Main Menu"]
+        self.pause_index = 0
         self.options = [
             "Save Score",
             "Play Again",
@@ -42,8 +48,25 @@ class Game:
         self.menu_index = 0
         self._setup_level()
 
-    def valid_player_name(self, name: str) -> bool:
-        return name.isalnum() and len(name) <= 12
+    @staticmethod
+    def valid_name_char(char: str) -> bool:
+        """
+        Return True if the character can be part of a highscore name:
+        an ASCII letter, a digit or a space
+        """
+        return char == " " or (char.isascii() and char.isalnum())
+
+    def name_error(self, name: str) -> str | None:
+        """
+        Return why the highscore name is invalid, or None if it is valid
+        """
+        if not name.strip():
+            return "Name cannot be empty"
+        if len(name) > MAX_NAME_LENGTH:
+            return f"Max {MAX_NAME_LENGTH} characters"
+        if not all(self.valid_name_char(char) for char in name):
+            return "Letters numbers and spaces only"
+        return None
 
     @property
     def is_level_won(self) -> bool:
@@ -126,6 +149,29 @@ class Game:
         for x, y in self.corners:
             self.pacgums.discard((y, x))
 
+    def toggle_invincibility(self) -> None:
+        self.pacman.invincible = not self.pacman.invincible
+
+    def toggle_freeze_ghost(self) -> None:
+        for ghost in self.ghosts:
+            ghost.frozen = not ghost.frozen
+
+    def add_life(self) -> None:
+        self.lives += 1
+
+    def increase_speed(self) -> None:
+        if self.pacman.vel == self.pacman.base_vel:
+            self.pacman.vel = self.pacman.base_vel * CHEAT_SPEED_MULTIPLIER
+        else:
+            self.pacman.vel = self.pacman.base_vel
+
+    def skip_level(self) -> None:
+        """
+        Clear every gum so the level is won on the next frame
+        """
+        self.pacgums.clear()
+        self.super_pacgums_pos.clear()
+
     def next_level(self) -> None:
         self.level += 1
         self._setup_level()
@@ -144,6 +190,10 @@ class Game:
 
     def _check_collision(self) -> None:
         for ghost in self.ghosts:
+            # Invincibility is blocked for frightened ghosts: they can't
+            # hurt pacman anyway, so he can still eat them
+            if self.pacman.invincible and ghost.state != GhostState.FRIGHTENED:
+                continue
             ghost_pos = ghost.x, ghost.y
             pacman_pos = self.pacman.x, self.pacman.y
             if pacman_pos == ghost_pos or (
@@ -168,13 +218,15 @@ class Game:
 
     def move_ghost(self, dt: float) -> None:
         for ghost in self.ghosts:
+            if ghost.frozen:
+                continue
             ghost.update_state(dt)
             if ghost.tick(dt):
                 if ghost.state == GhostState.CHASE:
                     ghost.direction = ghost.get_dir(self.pacman)
                     ghost.move(ghost.direction)
                 elif ghost.state == GhostState.FRIGHTENED:
-                    ghost.direction = ghost.get_dir_spawn(ghost.spawn_pos)
+                    ghost.direction = ghost.get_dir_flee(self.pacman)
                     ghost.move(ghost.direction)
                 elif ghost.state == GhostState.EATEN:
                     if (ghost.x, ghost.y) != ghost.spawn_pos:
@@ -230,4 +282,4 @@ class Game:
             self.score += self.config.point_per_superpacgum
             for ghost in self.ghosts:
                 if ghost.state != GhostState.EATEN:
-                    ghost.set_state(GhostState.FRIGHTENED, 7)
+                    ghost.set_state(GhostState.FRIGHTENED, FRIGHTENED_TIME)
