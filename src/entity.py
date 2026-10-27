@@ -4,6 +4,8 @@ from src.maze import Maze
 
 
 class Entity:
+    """Something that moves in the maze: pacman or a ghost."""
+
     def __init__(
         self,
         maze: Maze,
@@ -14,6 +16,7 @@ class Entity:
         sprite_path: str,
         vel: float,
     ) -> None:
+        """Place the entity at (x, y), not moving."""
         self.color = color
         self.maze = maze
         self.config = config
@@ -56,6 +59,7 @@ class Entity:
         return True
 
     def reset(self) -> None:
+        """Go back to the spawn position, not moving."""
         self.x, self.y = self.spawn_pos
         self.direction = STILL
         self.wanted_direction = STILL
@@ -63,11 +67,13 @@ class Entity:
         self.prev = self.spawn_pos
 
     def render_pos(self) -> tuple[float, float]:
+        """Return the position between the last two cells."""
         t = min(self.move_timer * self.vel, 1.0)
         px, py = self.prev
         return px + (self.x - px) * t, py + (self.y - py) * t
 
     def move(self, direction: tuple[int, int]) -> None:
+        """Move one cell in direction, unless a wall is there."""
         dx, dy = direction
         self.prev = self.x, self.y
         if self.able_to_move(direction):

@@ -20,6 +20,7 @@ DEFAULT_CFG_PARAMS: dict[str, Any] = {
 
 
 def is_positive(value: Any) -> bool:
+    """Return True for a strictly positive integer."""
     return isinstance(value, int) and not isinstance(value, bool) and value > 0
 
 
@@ -40,19 +41,25 @@ RULES: dict[str, Rule] = {
 
 
 def fail(message: str) -> NoReturn:
+    """Print an error and exit."""
     print(f"Error: {message}", file=sys.stderr)
     raise SystemExit(1)
 
 
 def warn(message: str) -> None:
+    """Print a warning."""
     print(f"Warning: {message}", file=sys.stderr)
 
 
 class Parser:
+    """Read and check the config file."""
+
     def __init__(self, path: Path) -> None:
+        """Keep the path of the config file."""
         self.path = path
 
     def _load_file(self) -> str:
+        """Return the file content, or exit if unreadable."""
         try:
             # utf-8-sig also accepts files saved with a BOM by some editors
             raw = self.path.read_text(encoding="utf-8-sig")
@@ -65,6 +72,7 @@ class Parser:
         return raw
 
     def _remove_comments(self, text: str) -> str:
+        """Remove the lines starting with #."""
         return "\n".join(
             line
             for line in text.splitlines()
@@ -72,6 +80,7 @@ class Parser:
         )
 
     def parse_json(self) -> dict[str, Any]:
+        """Return the JSON object of the file, or exit."""
         try:
             config = loads(self._remove_comments(self._load_file()))
         except JSONDecodeError as e:
@@ -83,6 +92,7 @@ class Parser:
         return config
 
     def _resolve(self, raw: dict[str, Any], param: str, default: Any) -> Any:
+        """Return the value of param, or its default."""
         check, expected = RULES.get(param, DEFAULT_RULE)
         if param not in raw:
             warn(f"{param} is missing, using default {default}.")
@@ -135,6 +145,7 @@ class Parser:
         return resolved
 
     def parse_config(self) -> dict[str, Any]:
+        """Return the checked config, with defaults."""
         raw = self.parse_json()
         for param in raw.keys() - DEFAULT_CFG_PARAMS.keys():
             warn(f"{param} is not a known parameter, ignoring it.")

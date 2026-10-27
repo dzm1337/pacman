@@ -23,7 +23,10 @@ PAUSE_KEYS = (pygame.K_p, K_ESCAPE)
 
 
 class Render:
+    """Main loop: events, screens and frame rate."""
+
     def __init__(self, draw: Draw, game: Game) -> None:
+        """Start on the main menu."""
         self.running = True
         self.game = game
         self.name = ""
@@ -35,6 +38,7 @@ class Render:
         self.draw = draw
 
     def _select_menu_option(self, option: str) -> None:
+        """Do what the selected menu option says."""
         if option == "Start":
             self.screen_state = Screen.PLAYING
         elif option == "Leaderboard":
@@ -46,6 +50,7 @@ class Render:
             self.running = False
 
     def _select_pause_option(self, option: str) -> None:
+        """Do what the selected pause option says."""
         if option == "Resume":
             self.screen_state = Screen.PLAYING
         elif option == "Instructions":
@@ -62,6 +67,7 @@ class Render:
         option: list[str],
         select: Callable[[str], None],
     ) -> int:
+        """Move in a menu or select, return the new index."""
         if key in (pygame.K_UP, pygame.K_w):
             index = (index - 1) % len(option)
         elif key in (pygame.K_DOWN, pygame.K_s):
@@ -71,6 +77,7 @@ class Render:
         return index
 
     def _key_handler(self, event: pygame.event.Event) -> None:
+        """Handle a key or quit event for the current screen."""
         if event.type == pygame.QUIT:
             self.running = False
         elif event.type == pygame.KEYDOWN:
@@ -123,6 +130,7 @@ class Render:
                 self.handle_save(event)
 
     def _save_score(self) -> None:
+        """Save the score, keeping the best one per name."""
         db = self.game.db
         rows = db.check_score_player(self.name)
         if not rows:
@@ -132,6 +140,7 @@ class Render:
             db.update_score(self.name, self.game.score)
 
     def handle_save(self, event: pygame.event.Event) -> None:
+        """Handle typing the name on the save screen."""
         if event.key in (K_RETURN, K_KP_ENTER):
             self.name_error = self.game.name_error(self.name)
             if self.name_error:
@@ -169,6 +178,7 @@ class Render:
         )
 
     def display(self) -> None:
+        """Open the window and run the game loop."""
         screen: Surface = pygame.display.set_mode(self._window_size())
         try:
             self.draw.load_assets()

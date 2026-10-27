@@ -13,6 +13,8 @@ FONT_META = FONT_DIR / "pacman.json"
 
 
 class BitmapFont:
+    """Pacman font drawn from a PNG sheet of glyphs."""
+
     def __init__(
         self,
         sheet: Surface,
@@ -20,6 +22,7 @@ class BitmapFont:
         image_height: int,
         glyphs: dict[str, list[int]],
     ) -> None:
+        """Keep the sheet and where each glyph is in it."""
         self.sheet = sheet
         # Line height, used to lay out rows of text
         self.height = height
@@ -31,9 +34,11 @@ class BitmapFont:
         self._cache: dict[tuple[str, tuple[int, int, int]], Surface] = {}
 
     def get_height(self) -> int:
+        """Return the line height."""
         return self.height
 
     def _glyph_box(self, char: str) -> list[int]:
+        """Return [x, width] of a glyph, or of '?' if missing."""
         # Characters missing from the sheet are drawn as '?'
         return self.glyphs.get(char, self.glyphs["?"])
 
@@ -51,6 +56,7 @@ class BitmapFont:
         return self.size(text)[0], self.image_height
 
     def _glyph(self, char: str, color: tuple[int, int, int]) -> Surface:
+        """Return the glyph image in a color, cached."""
         key = (char, color)
         if key not in self._cache:
             sheet_x, width = self._glyph_box(char)
@@ -91,6 +97,7 @@ def load_image(path: Path) -> Surface:
 
 
 def _is_size(value: object) -> bool:
+    """Return True for a strictly positive integer."""
     return isinstance(value, int) and not isinstance(value, bool) and value > 0
 
 

@@ -5,7 +5,10 @@ from src.parser import fail
 
 
 class Maze:
+    """Maze from the A-Maze-ing package, with its paths."""
+
     def __init__(self, width: int, height: int, seed: int) -> None:
+        """Generate the maze, or exit if the generator fails."""
         self.width = width
         self.height = height
         self.seed = seed
@@ -37,6 +40,7 @@ class Maze:
     def find_nearest_open_cell(
         self, center_x: int, center_y: int
     ) -> tuple[int, int]:
+        """Return the open cell closest to the given cell."""
         maze: list[list[int]] = self.get_maze
         max_distance = max(self.width, self.height)
 
@@ -66,6 +70,7 @@ class Maze:
     def find_neighbours(
         self,
     ) -> dict[tuple[int, int], list[tuple[int, int]]]:
+        """Return the cells reachable from each cell."""
         neighbours: dict[tuple[int, int], list[tuple[int, int]]] = {
             (x, y): [] for y in range(self.height) for x in range(self.width)
         }

@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Config:
+    """Game settings read from the config file."""
     level: list[dict[str, int]]
     width: int
     height: int

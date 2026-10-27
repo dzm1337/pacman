@@ -22,7 +22,10 @@ from src.pacman import Pacman
 
 
 class Game:
+    """A game: levels, entities, score and lives."""
+
     def __init__(self, config: Config) -> None:
+        """Start a new game at level 1."""
         self.db = Database()
         self.db.initialize_database()
         self.config = config
@@ -71,9 +74,11 @@ class Game:
 
     @property
     def is_level_won(self) -> bool:
+        """True when every gum is eaten."""
         return not self.pacgums and not self.super_pacgums_pos
 
     def _level_size(self) -> tuple[int, int]:
+        """Return the size of the current level."""
         i = self.level - 1
         if i < len(self.config.level):
             size = self.config.level[i]
@@ -81,11 +86,13 @@ class Game:
         return self.config.width, self.config.height
 
     def _level_seed(self) -> int:
+        """Return the fixed seed for level 1, a random one after."""
         if self.level == 1:
             return self.config.seed
         return random.randint(0, 2**31)
 
     def _setup_level(self) -> None:
+        """Generate the maze, the gums and the entities."""
         self.state = GameState.PLAYING
         self.time_left = self.config.level_max_time
         self.width, self.height = self._level_size()
@@ -155,16 +162,20 @@ class Game:
             self.pacgums.discard((y, x))
 
     def toggle_invincibility(self) -> None:
+        """Cheat: turn invincibility on or off."""
         self.pacman.invincible = not self.pacman.invincible
 
     def toggle_freeze_ghost(self) -> None:
+        """Cheat: freeze or unfreeze the ghosts."""
         for ghost in self.ghosts:
             ghost.frozen = not ghost.frozen
 
     def add_life(self) -> None:
+        """Cheat: give one extra life."""
         self.lives += 1
 
     def increase_speed(self) -> None:
+        """Cheat: turn the extra speed on or off."""
         if self.pacman.vel == self.pacman.base_vel:
             self.pacman.vel = self.pacman.base_vel * CHEAT_SPEED_MULTIPLIER
         else:
@@ -178,22 +189,26 @@ class Game:
         self.super_pacgums_pos.clear()
 
     def next_level(self) -> None:
+        """Go to the next level."""
         self.level += 1
         self._setup_level()
 
     def reset_game(self) -> None:
+        """Start over from level 1."""
         self.score = 0
         self.level = 1
         self.lives = self.config.lives
         self._setup_level()
 
     def _lose_life(self) -> None:
+        """Lose a life and send everyone back to spawn."""
         self.lives -= 1
         self.pacman.reset()
         for ghost in self.ghosts:
             ghost.reset()
 
     def _check_collision(self) -> None:
+        """Handle pacman touching a ghost: eat it or die."""
         for ghost in self.ghosts:
             # Invincibility is blocked for frightened ghosts: they can't
             # hurt pacman anyway, so he can still eat them
@@ -215,13 +230,16 @@ class Game:
 
     @property
     def is_alive(self) -> bool:
+        """True while there are lives and time left."""
         return self.lives > 0 and self.time_left > 0
 
     def move_pacman(self, key: int) -> None:
+        """Set the direction pacman takes next, from a key."""
         if key in DIRECTIONS:
             self.pacman.wanted_direction = DIRECTIONS[key]
 
     def move_ghost(self, dt: float) -> None:
+        """Move each ghost according to its state."""
         for ghost in self.ghosts:
             if ghost.frozen:
                 continue
@@ -243,6 +261,7 @@ class Game:
                         ghost.wait_at_home()
 
     def _decide_state(self) -> None:
+        """Mark the game as won or lost when it is over."""
         if self.is_level_won:
             self.state = GameState.WON
         elif not self.is_alive:

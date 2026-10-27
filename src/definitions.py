@@ -66,12 +66,14 @@ DIRECTIONS = {
 
 
 class GameState(Enum):
+    """State of the current game."""
     PLAYING = auto()
     WON = auto()
     LOST = auto()
 
 
 class GhostState(Enum):
+    """What a ghost is doing."""
     CHASE = auto()
     SCATTER = auto()
     FRIGHTENED = auto()
@@ -79,6 +81,7 @@ class GhostState(Enum):
 
 
 class Screen(Enum):
+    """Screen shown in the window."""
     PLAYING = auto()
     MENU = auto()
     GAME_OVER = auto()

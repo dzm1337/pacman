@@ -16,10 +16,14 @@ CREATE TABLE IF NOT EXISTS highscore(
 
 
 class Database:
+    """Highscores saved in a SQLite database."""
+
     def __init__(self) -> None:
+        """Track the warnings already printed."""
         self._warned: set[str] = set()
 
     def _warn_once(self, message: str) -> None:
+        """Print a warning, only the first time."""
         if message not in self._warned:
             self._warned.add(message)
             warn(message)

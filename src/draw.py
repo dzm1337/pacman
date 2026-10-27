@@ -63,12 +63,16 @@ HUD_GAP = 8
 
 
 class Draw:
+    """Draw every screen of the game."""
+
     def __init__(self, game: Game) -> None:
+        """Keep the game to draw, assets are loaded later."""
         self.game = game
         self.font: BitmapFont
         self.small_font: BitmapFont
 
     def load_assets(self) -> None:
+        """Load the fonts and sprites."""
         fonts = load_fonts(FONT_SIZES)
         self.title_font = fonts[64]
         self.font = fonts[48]
@@ -133,6 +137,7 @@ class Draw:
         self.block_42 = self._load_sprite("assets/game/block_42.png")
 
     def _load_sprite(self, path: str) -> Surface:
+        """Load a sprite from the project folder."""
         image = load_image(ROOT / path).convert_alpha()
         return image
 
@@ -147,6 +152,7 @@ class Draw:
         )
 
     def ghosts(self, screen: Surface) -> None:
+        """Draw the ghosts according to their state."""
         for i, ghost in enumerate(self.game.ghosts):
             px, py = self._cell_center(*ghost.render_pos())
 
@@ -167,12 +173,14 @@ class Draw:
                 screen.blit(eyes, rect)
 
     def super_pacgum(self, screen: Surface) -> None:
+        """Draw the super-pacgums."""
         for gum in self.game.super_pacgums_pos:
             px, py = self._cell_center(*gum)
             rect = self.super_pacgum_sprite.get_rect(center=(px, py))
             screen.blit(self.super_pacgum_sprite, rect)
 
     def pacman(self, screen: Surface, dx: int, dy: int) -> None:
+        """Draw pacman with his mouth animation."""
         pacman = self.game.pacman
         if pacman.direction in self.pacman_frames:
             self.pacman_facing = pacman.direction
@@ -191,6 +199,7 @@ class Draw:
         screen.blit(sprite, rect)
 
     def gums(self, screen: Surface) -> None:
+        """Draw the pacgums."""
         for gy, gx in self.game.pacgums:
             rect = self.pacgum_sprite.get_rect(
                 center=self._cell_center(gx, gy)
@@ -198,6 +207,7 @@ class Draw:
             screen.blit(self.pacgum_sprite, rect)
 
     def maze(self, screen: Surface) -> None:
+        """Draw the walls and the closed "42" cells."""
         maze = self.game.maze.get_maze
         # The wall images are thicker than one pixel: center them on the
         # cell edge, the extra pixel going up / left
@@ -235,6 +245,7 @@ class Draw:
         font: BitmapFont | None = None,
         anchor: str = "center",
     ) -> None:
+        """Draw text with its anchor (center, midleft...) at pos."""
         font = font or self.font
         w, h = font.image_size(text)
         fx, fy = ANCHORS[anchor]
@@ -288,6 +299,7 @@ class Draw:
     def _footer(
         self, screen: Surface, text: str = "Press ENTER to select"
     ) -> None:
+        """Draw a hint at the bottom of the screen."""
         self.text(
             screen,
             text,
@@ -297,6 +309,7 @@ class Draw:
         )
 
     def option_screen(self, screen: Surface) -> None:
+        """Draw the victory screen and its options."""
         center_x = screen.get_width() // 2
         top_y = self._options(
             screen,
@@ -369,6 +382,7 @@ class Draw:
         )
 
     def game_screen(self, screen: Surface) -> None:
+        """Draw the HUD, the maze and everything in it."""
         self.hud(screen)
         # The maze is drawn below the HUD (see _cell_center)
         self.maze(screen)
@@ -430,6 +444,7 @@ class Draw:
     def save(
         self, screen: Surface, name: str, error: str | None = None
     ) -> None:
+        """Draw the name input to save the score."""
         center_x = screen.get_width() // 2
         center_y = screen.get_width() // 2 + 100
 
@@ -479,6 +494,7 @@ class Draw:
         return self.table_fonts[-1]
 
     def leaderboard(self, screen: Surface) -> None:
+        """Draw the top 10 highscores."""
         width = screen.get_width()
         center_x = width // 2
         title_y = 50
@@ -548,6 +564,7 @@ class Draw:
         )
 
     def _ghost_row(self, screen: Surface, center_x: int, y: int) -> None:
+        """Draw the four ghosts in a row."""
         gap = MENU_SPRITE_SIZE + 14
         start_x = center_x - gap * (len(self.menu_ghosts) - 1) // 2
         for i, sprite in enumerate(self.menu_ghosts):
@@ -685,6 +702,7 @@ class Draw:
         self._footer(screen, "ESC to go back")
 
     def menu(self, screen: Surface) -> None:
+        """Draw the main menu."""
         center_x = screen.get_width() // 2
         top_y = self._options(
             screen,

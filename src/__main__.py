@@ -12,6 +12,7 @@ from src.render import Render
 
 
 def parse_args(argv: list[str]) -> Path:
+    """Return the config path given on the command line, or exit."""
     args = argv[1:]
     # The packaged game is started by a double click, without arguments:
     # it then uses the config.json shipped next to the executable
@@ -34,6 +35,7 @@ def parse_args(argv: list[str]) -> Path:
 
 
 def main() -> None:
+    """Load the config and run the game."""
     # Parse the config file properly, and pass all the data to Config class.
 
     try:

@@ -4,6 +4,8 @@ from src.maze import Maze
 
 
 class Pacman(Entity):
+    """The player."""
+
     def __init__(
         self,
         maze: Maze,
@@ -12,6 +14,7 @@ class Pacman(Entity):
         sprite_path: str,
         vel: float,
     ) -> None:
+        """Create pacman in the middle of the maze."""
         super().__init__(
             maze,
             config,

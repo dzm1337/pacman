@@ -19,6 +19,8 @@ from src.pacman import Pacman
 
 
 class Ghost(Entity, ABC):
+    """Base class of the four ghosts."""
+
     def __init__(
         self,
         maze: Maze,
@@ -29,6 +31,7 @@ class Ghost(Entity, ABC):
         sprite_path: str,
         vel: float,
     ) -> None:
+        """Create the ghost in its corner, chasing."""
         # Change the state of the Ghost, chase / scatter / frightened / eaten
         self.state = GhostState.CHASE
         self.state_timer: float = 0.0
@@ -41,10 +44,12 @@ class Ghost(Entity, ABC):
         self.frozen = False
 
     def set_state(self, state: GhostState, duration: float) -> None:
+        """Change the state for duration seconds."""
         self.state = state
         self.state_timer = duration
 
     def update_state(self, dt: float) -> None:
+        """Count down the state, then go back to chasing."""
         if self.state_timer > 0:
             self.state_timer -= dt
             if self.state_timer <= 0:
@@ -132,6 +137,7 @@ class Ghost(Entity, ABC):
         return self.random_move()
 
     def get_dir_spawn(self, spawn_pos: tuple[int, int]) -> tuple[int, int]:
+        """Return the direction back to the spawn corner."""
         next_coord = self._chase(spawn_pos)
         if next_coord is None or self.flag_random:
             self.flag_random = True
@@ -178,6 +184,7 @@ class Pinky(Ghost):
     """Random (uses Ghost.random_move)."""
 
     def get_dir(self, pacman: Pacman) -> tuple[int, int]:
+        """Chase the cell 4 steps away from pacman."""
         target = self.find_target(pacman, 4)
         if target is None:
             return STILL
@@ -192,6 +199,7 @@ class Clyde(Ghost):
     """Random (uses Ghost.random_move)."""
 
     def get_dir(self, pacman: Pacman) -> tuple[int, int]:
+        """Chase the cell 8 steps away from pacman."""
         target = self.find_target(pacman, 8)
         if target is None:
             return STILL
@@ -205,6 +213,7 @@ class Blinky(Ghost):
     """Chase the pac-man directly, following the shortest path to him."""
 
     def get_dir(self, pacman: Pacman) -> tuple[int, int]:
+        """Chase pacman by the shortest path."""
         next_coord = self._chase((pacman.x, pacman.y))
         if next_coord is None:
             return STILL
