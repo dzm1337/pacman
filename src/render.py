@@ -127,7 +127,8 @@ class Render:
         rows = db.check_score_player(self.name)
         if not rows:
             db.insert_player(self.name, self.game.score)
-        elif self.game.score > rows[0][0]:
+        # A saved score that isn't a number (edited database) is replaced
+        elif not isinstance(rows[0][0], int) or self.game.score > rows[0][0]:
             db.update_score(self.name, self.game.score)
 
     def handle_save(self, event: pygame.event.Event) -> None:
@@ -171,8 +172,8 @@ class Render:
         screen: Surface = pygame.display.set_mode(self._window_size())
         try:
             self.draw.load_assets()
-        except Exception as e:
-            fail(f"Error to load asset: {e}")
+        except (OSError, ValueError, pygame.error) as e:
+            fail(f"cannot load the assets: {e}")
 
         pygame.display.set_caption("PACMAN")
         frame_time = 1 / FPS
