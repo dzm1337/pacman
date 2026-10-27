@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 
 from src import __main__ as entry
@@ -22,7 +24,7 @@ def test_ctrl_c_quits_without_traceback(
     else:
         monkeypatch.setattr(Render, "display", interrupt)
     argv = ["pac-man.py", "config/config.json"]
-    monkeypatch.setattr(entry.sys, "argv", argv)
+    monkeypatch.setattr(sys, "argv", argv)
     with pytest.raises(SystemExit) as exit_info:
         entry.main()
     assert exit_info.value.code == 130
