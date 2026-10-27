@@ -3,7 +3,7 @@ name = "pacman"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.10"
 dependencies = [
     "mazegenerator",
     "pygame-ce>=2.5.8",
@@ -17,3 +17,12 @@ mazegenerator = { path = "maze/mazegenerator-2.1.0-py3-none-any.whl" }
 [[tool.mypy.overrides]]
 module = "mazegenerator"
 ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]

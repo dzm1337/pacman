@@ -29,7 +29,7 @@ Features:
 
 ### Requirements
 
-- Python 3.14
+- Python 3.10 or later
 - [uv](https://docs.astral.sh/uv/)
 
 ### Installation and execution
@@ -53,9 +53,16 @@ root). It must be a `.json` file.
 | Rule               | What it does                                               |
 |--------------------|------------------------------------------------------------|
 | `make debug`       | Run the game under `pdb`                                   |
-| `make clean`       | Remove `__pycache__` and `.mypy_cache`                     |
+| `make clean`       | Remove `__pycache__`, `.mypy_cache` and `.pytest_cache`    |
 | `make lint`        | `flake8` and `mypy` with the flags required by the subject |
 | `make lint-strict` | `flake8` and `mypy --strict`                               |
+| `make test`        | `pytest`: broken files and permissions, every screen       |
+
+The tests in `tests/` check that the game never crashes: missing files,
+missing permissions, invalid JSON, broken assets, an unwritable or corrupted
+database and extreme config values must end with a clear error or a warning.
+They use a copy of the assets and a temporary database, so they never touch
+`db/leaderboard.db`.
 
 ### Controls
 
