@@ -27,6 +27,11 @@ Features:
 
 ## Instructions
 
+The packaged game can be downloaded from itch.io, no install needed:
+**<https://dde-paul.itch.io/pacman>**. Download the zip for your system, unzip
+it and run `pacman` (see `INSTRUCTIONS.txt` inside). To run it from the
+sources instead, follow the steps below.
+
 ### Requirements
 
 - Python 3.10 or later
@@ -95,9 +100,9 @@ The packaged game differs from `python3 pac-man.py` in two ways
 PyInstaller doesn't cross-compile: the zip only runs on the system it was
 built on (`pacman-linux.zip` on Linux, `pacman-darwin.zip` on macOS,
 `pacman-win32.zip` on Windows). Build on the system of the players, then
-upload the zip to the itch.io project page as a downloadable file for that
-system, with the project visibility set to "Restricted" or "Draft" so it
-stays private.
+upload the zip to the [itch.io project page](https://dde-paul.itch.io/pacman)
+as a downloadable file for that system, with the project visibility set to
+"Restricted" (with a password) so it stays private but reviewers can open it.
 
 ### Controls
 
