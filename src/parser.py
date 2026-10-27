@@ -2,7 +2,7 @@ from collections.abc import Callable
 from copy import deepcopy
 from json import JSONDecodeError, loads
 from pathlib import Path
-from sys import stderr
+import sys
 from typing import Any, NoReturn
 
 DEFAULT_CFG_PARAMS: dict[str, Any] = {
@@ -40,12 +40,12 @@ RULES: dict[str, Rule] = {
 
 
 def fail(message: str) -> NoReturn:
-    print(f"Error: {message}", file=stderr)
+    print(f"Error: {message}", file=sys.stderr)
     raise SystemExit(1)
 
 
 def warn(message: str) -> None:
-    print(f"Warning: {message}", file=stderr)
+    print(f"Warning: {message}", file=sys.stderr)
 
 
 class Parser:
@@ -54,7 +54,8 @@ class Parser:
 
     def _load_file(self) -> str:
         try:
-            raw = self.path.read_text(encoding="utf-8")
+            # utf-8-sig also accepts files saved with a BOM by some editors
+            raw = self.path.read_text(encoding="utf-8-sig")
         except OSError as e:
             fail(f"cannot read {self.path}: {e.strerror}")
         except UnicodeDecodeError:
@@ -75,6 +76,8 @@ class Parser:
             config = loads(self._remove_comments(self._load_file()))
         except JSONDecodeError as e:
             fail(f"{self.path} is not valid JSON: {e}")
+        except RecursionError:
+            fail(f"{self.path} is nested too deeply.")
         if not isinstance(config, dict):
             fail(f"{self.path} must contain a JSON object.")
         return config

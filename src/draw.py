@@ -17,6 +17,7 @@ from src.definitions import (
     MOUTH_FRAME_TIME,
     PACMAN_COLOR,
     RIGHT,
+    ROOT,
     STILL,
     UP,
     WALL_COLOR,
@@ -27,7 +28,7 @@ from src.definitions import (
     S,
     W,
 )
-from src.font import BitmapFont, load_fonts
+from src.font import BitmapFont, load_fonts, load_image
 from src.game import Game
 
 # Sprite file suffix for each direction (e.g. pacman_up.png, eyes_up.png)
@@ -132,7 +133,7 @@ class Draw:
         self.block_42 = self._load_sprite("assets/game/block_42.png")
 
     def _load_sprite(self, path: str) -> Surface:
-        image = pygame.image.load(path).convert_alpha()
+        image = load_image(ROOT / path).convert_alpha()
         return image
 
     @staticmethod
