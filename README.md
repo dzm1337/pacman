@@ -296,15 +296,5 @@ Task split, timeline, workflow and the difficulties we met are detailed in the
 
 ### AI usage
 
-<!-- TODO: check this matches what you really did -->
-We used Claude (Claude Code) as an assistant, and reviewed and tested
-everything it produced. It helped with:
-
-- debugging: Pac-Man movement, collisions when Pac-Man and a ghost cross,
-  the eaten ghost state;
-- UI screens: menu, pause, instructions, victory and game over layouts,
-  leaderboard column alignment;
-- sprites: the eyes and the mouth animation frames, made from our existing
-  sprites;
 - robustness: config validation and clamping, SQLite error handling;
 - tooling: the Makefile, type hints for mypy, and this README.

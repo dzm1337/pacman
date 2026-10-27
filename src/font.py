@@ -13,12 +13,6 @@ FONT_META = FONT_DIR / "pacman.json"
 
 
 class BitmapFont:
-    """
-    The pacman font baked into a PNG sheet of white glyphs, one per size.
-    Text is drawn by copying glyph images onto the screen, like
-    mlx_put_image_to_window: no TTF rendering while the game runs
-    """
-
     def __init__(
         self,
         sheet: Surface,
