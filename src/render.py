@@ -189,6 +189,8 @@ class Render:
         frame_time = 1 / FPS
         last_frame = time.monotonic()
 
+        # The game starts new, so no reset is needed on the first menu frame
+        previous_screen = Screen.MENU
         self.running = True
         while self.running:
             frame_start = time.monotonic()
@@ -203,7 +205,10 @@ class Render:
             screen.fill(BACKGROUND)
 
             if self.screen_state == Screen.MENU:
-                self.game.reset_game()
+                # Reset once when arriving on the menu, not every frame:
+                # each reset generates a new maze
+                if previous_screen != Screen.MENU:
+                    self.game.reset_game()
                 self.draw.menu(screen)
             elif self.screen_state == Screen.PLAYING:
                 if self.game.state == GameState.PLAYING:
@@ -229,6 +234,7 @@ class Render:
                 self.draw.pause(screen)
             elif self.screen_state == Screen.INSTRUCTIONS:
                 self.draw.instructions(screen)
+            previous_screen = self.screen_state
 
             pygame.display.flip()
             # Sleep the rest of the frame to run at FPS frames per second
