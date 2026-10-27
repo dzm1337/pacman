@@ -2,8 +2,8 @@
 #
 # Output:
 #   dist/pacman/                the game folder: executable, config.json,
-#                               README.txt and _internal/ (Python, pygame,
-#                               assets)
+#                               INSTRUCTIONS.txt and _internal/ (Python,
+#                               pygame, assets)
 #   dist/pacman-<platform>.zip  that folder zipped, ready for itch.io
 #
 # PyInstaller doesn't cross-compile: build on the system the package is for.
@@ -34,7 +34,7 @@ coll = COLLECT(exe, a.binaries, a.datas, name="pacman")
 # Files the player reads or edits, next to the executable
 out = Path(DISTPATH) / "pacman"
 shutil.copy("config/config.json", out / "config.json")
-shutil.copy("packaging/README.txt", out / "README.txt")
+shutil.copy("packaging/INSTRUCTIONS.txt", out / "INSTRUCTIONS.txt")
 
 shutil.make_archive(
     str(Path(DISTPATH) / f"pacman-{sys.platform}"),

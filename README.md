@@ -77,7 +77,7 @@ root of the repository. Players don't need Python or any dependency.
 dist/pacman/                 the game folder
 ├── pacman                   the executable (pacman.exe on Windows)
 ├── config.json              the config, edit it to change the game
-├── README.txt               in-package instructions (packaging/README.txt)
+├── INSTRUCTIONS.txt         in-package instructions (packaging/INSTRUCTIONS.txt)
 ├── db/leaderboard.db        the highscores, created at the first launch
 └── _internal/               Python, pygame-ce, mazegenerator and the assets
 dist/pacman-<platform>.zip   the same folder, zipped for itch.io
@@ -231,8 +231,7 @@ MazeGenerator(size=(width, height), seed=seed, perfect=False)
 - **MLX compatibility**: the subject only allows functions that have an
   equivalent in the MLX. The game only creates a window, loads images,
   copies images and pixels, and reads key events: walls, pacgums and text are
-  PNG images, and the text uses a bitmap font made from `pacman.ttf`. See
-  [MLX_COMPATIBILITY.md](MLX_COMPATIBILITY.md).
+  PNG images, and the text uses a bitmap font made from `pacman.ttf`.
 
 ## General Software Architecture
 
@@ -278,7 +277,7 @@ How the classes fit together:
   identical, and `make lint` our code style.
 
 Task split, timeline, workflow and the difficulties we met are detailed in the
-[project management directory](project_management/README.md).
+[project management directory](project_management/project_management.md).
 
 ## Resources
 
