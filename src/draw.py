@@ -1,7 +1,6 @@
 import time
 from math import ceil
 
-import pygame
 from pygame import Surface
 
 from src.definitions import (
@@ -39,7 +38,8 @@ DIRECTION_NAMES = (
     (RIGHT, "right"),
 )
 
-# Anchor offset factors in halves of the text size (0 = start, 1 = middle, 2 = end)
+# Anchor offset factors in halves of the text size
+# (0 = start, 1 = middle, 2 = end)
 ANCHORS = {
     "topleft": (0, 0),
     "midtop": (1, 0),
