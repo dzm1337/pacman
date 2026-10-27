@@ -35,6 +35,7 @@ no transparency blending, no window scaling and no clock.
 | Pause: game darkened by a `SRCALPHA` surface | MLX has no alpha blending   | Pause menu drawn on a black screen                          |
 | `pygame.time.Clock().tick(FPS)`              | MLX has no clock            | `time.monotonic()` and `time.sleep()` from Python           |
 | `pygame.time.get_ticks()` (mouth animation)  | MLX has no clock            | `time.monotonic()`                                          |
+| `pygame.Rect` to anchor text in `Draw.text`  | Not an MLX function         | Top-left corner computed by hand (`ANCHORS`)                |
 
 The game looks the same. We rendered every screen before and after the
 change and compared them pixel by pixel. The menu, game, HUD, instructions,
@@ -99,9 +100,19 @@ image). The result is cached, so each (character, color) pair is only built
 once. The first frame of the menu takes about 0.16 s because of that, then
 drawing text is just blits.
 
-`Draw.text` places the text the same way as before: a `pygame.Rect` (only
-coordinates, nothing drawn) of the text size is anchored at the given point,
-then the glyphs are drawn from its top-left corner. The font is pixel art
+`Draw.text` places the text the same way as before, without a `pygame.Rect`.
+For a text of size `w × h` anchored at `(x, y)`, the top-left corner is:
+
+```
+left = x - fx * w // 2
+top  = y - fy * h // 2
+```
+
+`fx` and `fy` come from the `ANCHORS` table in `src/draw.py`: 0 for the
+left / top, 1 for the middle and 2 for the right / bottom (in halves of the
+size, so the math stays in integers). This is exactly what `pygame.Rect`
+computed for `center`, `midleft`, `topright`, etc. The glyphs are then drawn
+from that corner. The font is pixel art
 without antialiasing, so every pixel is fully on or off. Recoloring needs no
 blending.
 
@@ -138,7 +149,7 @@ pacgums, and `Draw.maze` does the same for the walls.
 | `pygame.event.get()`, `KEYDOWN`, `K_*`         | `mlx_hook` / `mlx_key_hook` with key codes       |
 | `QUIT` event                                   | `mlx_hook` on the window close event (17)        |
 | `pygame.quit()`                                | `mlx_destroy_window`                             |
-| `get_rect`, `get_size`, `get_width`, `pygame.Rect` | no drawing: only width / height and coordinate math |
+| `get_rect`, `get_size`, `get_width`            | no drawing: only width / height and coordinate math |
 
 ## Regenerating the images
 
