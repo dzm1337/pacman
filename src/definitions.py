@@ -1,3 +1,4 @@
+import sys
 from enum import Enum, auto
 from pathlib import Path
 
@@ -5,6 +6,12 @@ import pygame
 
 # Project folder: assets are found from here, whatever folder the game runs in
 ROOT = Path(__file__).parent.parent
+# True in the packaged game built by PyInstaller (make package)
+FROZEN = getattr(sys, "frozen", False)
+# Folder for the files the player keeps (config, highscores): the project
+# folder, or the folder of the executable in the packaged game, where ROOT
+# is PyInstaller's internal folder
+APP_DIR = Path(sys.executable).parent if FROZEN else ROOT
 
 N, E, S, W = 1, 2, 4, 8
 CELL_SIZE = 56

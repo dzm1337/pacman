@@ -1,11 +1,11 @@
 import sqlite3
 from contextlib import closing
-from pathlib import Path
 from typing import Any
 
+from src.definitions import APP_DIR
 from src.parser import warn
 
-DB_PATH = Path(__file__).parent.parent / "db" / "leaderboard.db"
+DB_PATH = APP_DIR / "db" / "leaderboard.db"
 
 CREATE_TABLE = """
 CREATE TABLE IF NOT EXISTS highscore(

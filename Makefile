@@ -2,7 +2,7 @@ CONFIG = config/config.json
 MYPY_FLAGS = --warn-return-any --warn-unused-ignores --ignore-missing-imports \
 	--disallow-untyped-defs --check-untyped-defs
 
-.PHONY: install run debug clean lint lint-strict test
+.PHONY: install run debug clean lint lint-strict test package
 
 install:
 	uv sync
@@ -15,7 +15,7 @@ debug:
 
 clean:
 	find . -name "__pycache__" -not -path "./.venv/*" -prune -exec rm -rf {} +
-	rm -rf .mypy_cache .pytest_cache
+	rm -rf .mypy_cache .pytest_cache build dist
 
 lint:
 	uv run flake8 . --exclude .venv,maze
@@ -29,3 +29,6 @@ lint-strict:
 
 test:
 	uv run pytest
+
+package:
+	uv run pyinstaller --noconfirm --clean pacman.spec

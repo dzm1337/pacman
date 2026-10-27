@@ -45,24 +45,59 @@ Or, inside the virtual environment:
 python3 pac-man.py config/config.json
 ```
 
-The only argument is the path of the config file (relative to the project
-root). It must be a `.json` file.
+The only argument is the path of the config file, absolute or relative to the
+folder the game is run from. It must be a `.json` file. The assets and the
+highscore database are always found from the project folder, so the game can
+be run from anywhere.
 
 ### Other Makefile rules
 
 | Rule               | What it does                                               |
 |--------------------|------------------------------------------------------------|
 | `make debug`       | Run the game under `pdb`                                   |
-| `make clean`       | Remove `__pycache__`, `.mypy_cache` and `.pytest_cache`    |
+| `make clean`       | Remove the caches and the `build/` and `dist/` folders     |
 | `make lint`        | `flake8` and `mypy` with the flags required by the subject |
 | `make lint-strict` | `flake8` and `mypy --strict`                               |
 | `make test`        | `pytest`: broken files and permissions, every screen       |
+| `make package`     | Build the packaged game in `dist/` (see Packaging)         |
 
 The tests in `tests/` check that the game never crashes: missing files,
 missing permissions, invalid JSON, broken assets, an unwritable or corrupted
 database and extreme config values must end with a clear error or a warning.
 They use a copy of the assets and a temporary database, so they never touch
 `db/leaderboard.db`.
+
+### Packaging
+
+`make package` builds a standalone game with
+[PyInstaller](https://pyinstaller.org), from the spec `pacman.spec` at the
+root of the repository. Players don't need Python or any dependency.
+
+```
+dist/pacman/                 the game folder
+├── pacman                   the executable (pacman.exe on Windows)
+├── config.json              the config, edit it to change the game
+├── README.txt               in-package instructions (packaging/README.txt)
+├── db/leaderboard.db        the highscores, created at the first launch
+└── _internal/               Python, pygame-ce, mazegenerator and the assets
+dist/pacman-<platform>.zip   the same folder, zipped for itch.io
+```
+
+The packaged game differs from `python3 pac-man.py` in two ways
+(`FROZEN` and `APP_DIR` in `src/definitions.py`):
+
+- Started without an argument (double click, itch.io app), it uses the
+  `config.json` next to the executable. Another config can still be given
+  as the only argument.
+- The highscores are saved next to the executable, in `db/`, because the
+  assets folder is PyInstaller's internal folder.
+
+PyInstaller doesn't cross-compile: the zip only runs on the system it was
+built on (`pacman-linux.zip` on Linux, `pacman-darwin.zip` on macOS,
+`pacman-win32.zip` on Windows). Build on the system of the players, then
+upload the zip to the itch.io project page as a downloadable file for that
+system, with the project visibility set to "Restricted" or "Draft" so it
+stays private.
 
 ### Controls
 

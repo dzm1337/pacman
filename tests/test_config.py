@@ -4,6 +4,7 @@ from typing import Any
 
 import pytest
 
+from src import __main__ as entry
 from src.__main__ import parse_args
 from src.config import Config
 from src.parser import DEFAULT_CFG_PARAMS, Parser
@@ -39,9 +40,29 @@ def test_not_a_json_file(capsys: pytest.CaptureFixture[str]) -> None:
     assert "is not a .json file" in capsys.readouterr().err
 
 
+def test_packaged_game_without_argument(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Double click on the packaged game: config.json next to the executable
+    monkeypatch.setattr(entry, "FROZEN", True)
+    monkeypatch.setattr(entry, "APP_DIR", tmp_path)
+    assert parse_args(["pacman"]) == tmp_path / "config.json"
+
+
 def test_absolute_path_is_kept(tmp_path: Path) -> None:
     path = tmp_path / "config.json"
     assert parse_args(["pac-man.py", str(path)]) == path
+
+
+def test_relative_path_from_current_folder(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # A config outside the project, given relative to where the game runs
+    (tmp_path / "mine").mkdir()
+    (tmp_path / "mine" / "my.json").write_text('{"lives": 7}')
+    monkeypatch.chdir(tmp_path)
+    path = parse_args(["pac-man.py", "mine/my.json"])
+    assert Parser(path).parse_config()["lives"] == 7
 
 
 def test_missing_file(

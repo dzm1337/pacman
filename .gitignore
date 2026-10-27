@@ -7,3 +7,5 @@ __pycache__
 *.swp
 .aider*
 .pytest_cache
+build/
+dist/
