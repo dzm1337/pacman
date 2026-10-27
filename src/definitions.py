@@ -1,6 +1,10 @@
 from enum import Enum, auto
+from pathlib import Path
 
 import pygame
+
+# Project folder: assets are found from here, whatever folder the game runs in
+ROOT = Path(__file__).parent.parent
 
 N, E, S, W = 1, 2, 4, 8
 CELL_SIZE = 56

@@ -6,3 +6,4 @@ db/leaderboard.db
 __pycache__
 *.swp
 .aider*
+.pytest_cache
