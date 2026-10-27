@@ -12,9 +12,9 @@ from src.definitions import (
     DOWN,
     FRIGHTENED_BLINK_TIME,
     HUD_HEIGHT,
+    LEFT,
     MAX_LEVEL,
     MOUTH_FRAME_TIME,
-    LEFT,
     PACMAN_COLOR,
     RIGHT,
     STILL,
@@ -37,6 +37,19 @@ DIRECTION_NAMES = (
     (LEFT, "left"),
     (RIGHT, "right"),
 )
+
+# Anchor offset factors in halves of the text size (0 = start, 1 = middle, 2 = end)
+ANCHORS = {
+    "topleft": (0, 0),
+    "midtop": (1, 0),
+    "topright": (2, 0),
+    "midleft": (0, 1),
+    "center": (1, 1),
+    "midright": (2, 1),
+    "bottomleft": (0, 2),
+    "midbottom": (1, 2),
+    "bottomright": (2, 2),
+}
 
 # Every font size used by the screens, baked in assets/fonts
 FONT_SIZES = (64, 48, 32, 24, 20, 16, 8)
@@ -222,9 +235,12 @@ class Draw:
         anchor: str = "center",
     ) -> None:
         font = font or self.font
-        rect = pygame.Rect((0, 0), font.image_size(text))
-        setattr(rect, anchor, pos)
-        font.draw(screen, text, rect.topleft, color)
+        w, h = font.image_size(text)
+        fx, fy = ANCHORS[anchor]
+        x, y = pos
+        left = x - fx * w // 2
+        top = y - fy * h // 2
+        font.draw(screen, text, (left, top), color)
 
     def _options(
         self,
@@ -430,9 +446,7 @@ class Draw:
                 (f for f in self.table_fonts if f.size(error)[0] <= max_width),
                 self.table_fonts[-1],
             )
-            self.text(
-                screen, error, (center_x, center_y + 95), COLOR_42, font
-            )
+            self.text(screen, error, (center_x, center_y + 95), COLOR_42, font)
 
         self.text(
             screen,
